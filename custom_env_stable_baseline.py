@@ -25,7 +25,7 @@ class CustomEnv(gym.Env):
     self.pendulum.setupSim()
     # They must be gym.spaces objects
     # Example when using discrete actions:
-    self.action_space = spaces.Box(low=-2.0, high=2.0,shape=None)
+    self.action_space = spaces.Box(low=-2.0, high=2.0,shape=(1,))
     # Example for using image as input:
     self.observation_space = spaces.Box(shape=(3,), dtype=np.float32)
 

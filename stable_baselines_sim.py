@@ -32,7 +32,7 @@ mean_reward, std_reward = evaluate_policy(model, env_eval, n_eval_episodes=10)
 print(f'Mean reward: {mean_reward} +/- {std_reward:.2f}')
 
 
-model.learn(total_timesteps=8000)
+model.learn(total_timesteps=NEPISODES*NSTEPS)
 model.save("ddpg_pendulum")
 
 mean_reward, std_reward = evaluate_policy(model, env_eval, n_eval_episodes=10)

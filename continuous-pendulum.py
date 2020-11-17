@@ -26,8 +26,8 @@ n_init = tf.keras.initializers.TruncatedNormal(seed=RANDOM_SEED)
 u_init = tf.keras.initializers.RandomUniform(minval=-0.003, maxval=0.003, seed=RANDOM_SEED)
 
 
-NEPISODES               = 600           # Max training steps
-NSTEPS                  = 200           # Max episode length
+NEPISODES               = 500           # Max training steps
+NSTEPS                  = 100           # Max episode length
 QVALUE_LEARNING_RATE    = 0.001         # Base learning rate for the Q-value Network
 POLICY_LEARNING_RATE    = 0.0001        # Base learning rate for the policy network
 DECAY_RATE              = 0.99          # Discount factor 
@@ -36,18 +36,18 @@ REPLAY_SIZE             = 10000         # Size of replay buffer
 BATCH_SIZE              = 64            # Number of points to be fed in stochastic gradient
 NH1 = NH2               = 250           # Hidden layer size
 
-reward_wheights  = [1.,.1,.001]
+reward_wheights  = [1.,0.,0.]
 
-sim_number = 15
+sim_number = 16
 RANDSET =1
-env                 = Robot("single_pendulum.urdf",[1],[1])       
-env_rend            = Robot("single_pendulum.urdf",[1],[1],sim_number=sim_number) #for rendering
+env                 = Robot("single_pendulum.urdf")       
+env_rend            = Robot("single_pendulum.urdf",sim_number=sim_number) #for rendering
 
 env.RANDSET = 0
 
-#env.withSinCos      = True              # State is dim-3: (cosq,sinq,qdot) ...
+
 NX                  = 3          # ... training converges with q,qdot with 2x more neurones.
-NU                  = len(env.ACTUATED_JOINTS_INDEX)            # Control is dim-1: joint torque
+NU                  = len(env.actuated_index)            # Control is dim-1: joint torque
 
 def angle_normalize(x):
     return ((x+np.pi) % (2*np.pi)) - np.pi
@@ -167,15 +167,15 @@ if __name__ == "__main__":
     def rendertrial(maxiter=NSTEPS,verbose=True):
     
         env_rend.resetRobot()
-        x = np.array([[env_rend.states_sincos[0][0],env_rend.states_sincos[0][1],
-                   env_rend.states_dot[0][3]]])
+        x = np.array([[env_rend.states_sincos[1][0],env_rend.states_sincos[1][1],
+                   env_rend.states_dot[1][3]]])
         rsum = 0.
         for i in range(maxiter):
             u = sess.run(policy.policy, feed_dict={ policy.x: x }) 
             env_rend.simulateDyn([u])
             x=np.array([[env_rend.states_sincos[0][0],env_rend.states_sincos[0][1],
                        env_rend.states_dot[0][3]]])
-            reward =  -np.square(angle_normalize(env_rend.states[0][3]))*reward_wheights[0]-np.square(env.states_dot[0][3]*reward_wheights[1]) - reward_wheights[2] * (u[0][0] ** 2)
+            reward =  -np.square(angle_normalize(env_rend.states[1][3]))*reward_wheights[0]-np.square(env.states_dot[1][3]*reward_wheights[1]) - reward_wheights[2] * (u[0][0] ** 2)
             #env.render()
             time.sleep(1e-2)
             rsum += reward
@@ -193,8 +193,8 @@ if __name__ == "__main__":
     env.setupSim() 
     for episode in range(1,NEPISODES):
         env.resetRobot()
-        x    = np.array([[env.states_sincos[0][0],env.states_sincos[0][1],
-                       env.states_dot[0][3]]])  #remove .T
+        x    = np.array([[env.states_sincos[1][0],env.states_sincos[1][1],
+                       env.states_dot[1][3]]])  #remove .T
         rsum = 0.0
  
         for step in range(NSTEPS):
@@ -202,9 +202,9 @@ if __name__ == "__main__":
             u      += 1. / (1. + episode + step)                         # ... with noise
             #print(u)
             env.simulateDyn([u])
-            x2 = np.array([env.states_sincos[0][0],env.states_sincos[0][1],
-                       env.states_dot[0][3]])   
-            r = -np.square(angle_normalize(env_rend.states[0][3]))*reward_wheights[0]-np.square(env.states_dot[0][3]*reward_wheights[1]) - reward_wheights[2] * (u[0][0] ** 2)
+            x2 = np.array([env.states_sincos[1][0],env.states_sincos[1][1],
+                       env.states_dot[1][3]])   
+            r = -np.square(angle_normalize(env_rend.states[1][3]))*reward_wheights[0]-np.square(env.states_dot[1][3]*reward_wheights[1]) - reward_wheights[2] * (u[1][0] ** 2)
             done    = False                                              # pendulum scenario is endless.
 
             replayDeque.append(ReplayItem(x,u,r,done,x2))                # Feed replay memory ...

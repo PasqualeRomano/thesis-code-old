@@ -30,7 +30,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/home/pasquale/Desktop/thesis/base_link.stl" />
+          filename="/home/pasquale/Desktop/thesis/stl/base_link.stl" />
       </geometry>
       <material
         name="">
@@ -44,7 +44,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/home/pasquale/Desktop/thesis/base_link.stl" />
+          filename="/home/pasquale/Desktop/thesis/stl/base_link.stl" />
       </geometry>
     </collision>
   </link>
@@ -70,7 +70,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/home/pasquale/Desktop/thesis/thesis/stl/link1.stl" />
+          filename="/home/pasquale/Desktop/thesis/stl/link1.stl" />
       </geometry>
       <material
         name="">
@@ -84,7 +84,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/home/pasquale/Desktop/thesis/thesis/stl/link1.stl" />
+          filename="/home/pasquale/Desktop/thesis/stl/link1.stl" />
       </geometry>
     </collision>
   </link>
