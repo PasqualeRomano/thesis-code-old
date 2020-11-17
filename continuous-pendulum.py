@@ -23,23 +23,23 @@ np .random.seed     (RANDOM_SEED)
 tf.compat.v1.set_random_seed(RANDOM_SEED)
 random.seed         (RANDOM_SEED)
 n_init = tf.keras.initializers.TruncatedNormal(seed=RANDOM_SEED)
-u_init = tf.keras.initializers.RandomUniform(minval=-0.003, maxval=0.003, seed=RANDOM_SEED)
+u_init = tf.keras.initializers.RandomUniform(minval=-2., maxval=2., seed=RANDOM_SEED)
 
 
 NEPISODES               = 500           # Max training steps
-NSTEPS                  = 100           # Max episode length
+NSTEPS                  = 200           # Max episode length
 QVALUE_LEARNING_RATE    = 0.001         # Base learning rate for the Q-value Network
 POLICY_LEARNING_RATE    = 0.0001        # Base learning rate for the policy network
 DECAY_RATE              = 0.99          # Discount factor 
-UPDATE_RATE             = 0.01          # Homotopy rate to update the networks
+UPDATE_RATE             = 0.01           # Homotopy rate to update the networks
 REPLAY_SIZE             = 10000         # Size of replay buffer
 BATCH_SIZE              = 64            # Number of points to be fed in stochastic gradient
 NH1 = NH2               = 250           # Hidden layer size
 
-reward_wheights  = [1.,0.,0.]
+reward_wheights  = [1.,0.01,0.001]
 
 sim_number = 16
-RANDSET =1
+RANDSET =0
 env                 = Robot("single_pendulum.urdf")       
 env_rend            = Robot("single_pendulum.urdf",sim_number=sim_number) #for rendering
 
@@ -47,10 +47,10 @@ env.RANDSET = 0
 
 
 NX                  = 3          # ... training converges with q,qdot with 2x more neurones.
-NU                  = len(env.actuated_index)            # Control is dim-1: joint torque
+NU                  = 1            # Control is dim-1: joint torque
 
 def angle_normalize(x):
-    return ((x+np.pi) % (2*np.pi)) - np.pi
+    return x #((x+np.pi) % (2*np.pi)) - np.pi
 
 class QValueNetwork:
     def __init__(self):
@@ -156,9 +156,6 @@ if __name__ == "__main__":
     sess            = tf.compat.v1.InteractiveSession()
     tf.compat.v1.global_variables_initializer().run()
 
-    # Uncomment to save or restore networks
-    #tf.train.Saver().restore(sess, "netvalues/actorcritic.pre.ckpt")
-    #tf.train.Saver().save   (sess, "netvalues/actorcritic.full.ckpt")
     env_rend.SINCOS = 1
     env_rend.GUI_ENABLED = 1
     env_rend.setupSim() 
@@ -172,11 +169,10 @@ if __name__ == "__main__":
         rsum = 0.
         for i in range(maxiter):
             u = sess.run(policy.policy, feed_dict={ policy.x: x }) 
-            env_rend.simulateDyn([u])
+            env_rend.simulateDyn([u[0][0]])
             x=np.array([[env_rend.states_sincos[0][0],env_rend.states_sincos[0][1],
                        env_rend.states_dot[0][3]]])
-            reward =  -np.square(angle_normalize(env_rend.states[1][3]))*reward_wheights[0]-np.square(env.states_dot[1][3]*reward_wheights[1]) - reward_wheights[2] * (u[0][0] ** 2)
-            #env.render()
+            reward =  -np.square(angle_normalize(env_rend.states[1][3]))*reward_wheights[0]-np.square(env_rend.states_dot[1][3]*reward_wheights[1]) - reward_wheights[2] * (u[0][0] ** 2)
             time.sleep(1e-2)
             rsum += reward
         if verbose: print('Lasted ',i,' timestep -- total reward:',rsum)
@@ -200,13 +196,13 @@ if __name__ == "__main__":
         for step in range(NSTEPS):
             u       = sess.run(policy.policy, feed_dict={ policy.x: x }) # Greedy policy ...
             u      += 1. / (1. + episode + step)                         # ... with noise
-            #print(u)
-            env.simulateDyn([u])
+            #print(u[0][0])
+            env.simulateDyn([u[0][0]])
             x2 = np.array([env.states_sincos[1][0],env.states_sincos[1][1],
                        env.states_dot[1][3]])   
-            r = -np.square(angle_normalize(env_rend.states[1][3]))*reward_wheights[0]-np.square(env.states_dot[1][3]*reward_wheights[1]) - reward_wheights[2] * (u[1][0] ** 2)
+            r = -np.square(angle_normalize(env.states[1][3]))*reward_wheights[0]-np.square(env.states_dot[1][3]*reward_wheights[1]) - reward_wheights[2] * (u[0][0] ** 2)
             done    = False                                              # pendulum scenario is endless.
-
+            #print(r)
             replayDeque.append(ReplayItem(x,u,r,done,x2))                # Feed replay memory ...
             if len(replayDeque)>REPLAY_SIZE: replayDeque.popleft()       # ... with FIFO forgetting.
 
@@ -259,32 +255,34 @@ if __name__ == "__main__":
         h_rwd.append(rsum) 
         h_qva.append(maxq)
         h_ste.append(step)
-        if not (episode+1) % 10:     rendertrial()
+        if not (episode+1) % 15:     rendertrial()
 
     # \\\END_FOR episode in range(NEPISODES)
     env.stopSim()
 
     print("Average reward during trials: %.3f" % (sum(h_rwd)/NEPISODES))
 
-
+    # env_rend.SINCOS = 1
+    # env_rend.GUI_ENABLED = 1
+    # env_rend.setupSim()
     env_rend.LOGDATA=1   ####@@@@@@@@@@@@@@@@############@@@@@@@@@@@@@@@@@@@@#############@@@@@@@@
     rendertrial()
     env_rend.stopSim()
 
 
-    f=open('1D_pendulum/hrwd{}.txt'.format(sim_number), 'w')
+    f=open('/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/hrwd{}.txt'.format(sim_number), 'w')
     f.write(json.dumps(h_rwd))
     f.close()
 
-    f=open('1D_pendulum/config{}.txt'.format(sim_number), 'w')
-    f.write("NEPISODES = "+str(NEPISODES)+", NSTEPS = "+str(NSTEPS)+", QVALUE_LEARNING_RATE = "+str(QVALUE_LEARNING_RATE)+", POLICY_LEARNING_RATE = "+str(POLICY_LEARNING_RATE)+", DECAY_RATE = "+str(DECAY_RATE)+", UPDATE_RATE = "+str(UPDATE_RATE)+", REPLAY_SIZE"+str(REPLAY_SIZE)+", BATCH_SIZE"+str(BATCH_SIZE)+", NH1 = "+str(NH1)+", NH2 = "+str(NH2) + ",reward weights = "+str(reward_wheights),
-            "RANDOM RESET = "+str(RANDSET))
+    f=open('/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/config{}.txt'.format(sim_number), 'w')
+    f.write("NEPISODES = "+str(NEPISODES)+", NSTEPS = "+str(NSTEPS)+", QVALUE_LEARNING_RATE = "+str(QVALUE_LEARNING_RATE)+", POLICY_LEARNING_RATE = "+str(POLICY_LEARNING_RATE)+", DECAY_RATE = "+str(DECAY_RATE)+", UPDATE_RATE = "+str(UPDATE_RATE)+", REPLAY_SIZE"+str(REPLAY_SIZE)+", BATCH_SIZE"+str(BATCH_SIZE)+", NH1 = "+str(NH1)+", NH2 = "+str(NH2) + ",reward weights = "+str(reward_wheights)
+            +"RANDOM RESET = "+str(RANDSET))
     f.close() 
 
     plt.plot( np.cumsum(h_rwd)/list(range(1,NEPISODES)))
     plt.grid(True)
     #plt.show()
-    plt.savefig('1D_pendulum/reward{}.png'.format(sim_number))
+    plt.savefig('/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/reward{}.png'.format(sim_number))
 
 
 

@@ -49,7 +49,7 @@ class Robot:
                 self.state_dot_seq = []
                 self.actions_seq = []
                 print("Starting video")
-                p.startStateLogging(p.STATE_LOGGING_VIDEO_MP4, "1D_pendulum/Video/Pendulum_training{}.mp4".format(self.sim_number),physicsClientId = self.client_id)               
+                p.startStateLogging(p.STATE_LOGGING_VIDEO_MP4, "/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/Video/Pendulum_training{}.mp4".format(self.sim_number),physicsClientId = self.client_id)               
         else:
             self.client_id =self.physicsClient = p.connect(p.DIRECT)
             
@@ -154,7 +154,7 @@ class Robot:
                 self.state_dot_seq = []
                 self.actions_seq = []
                 print("Starting video")
-                p.startStateLogging(p.STATE_LOGGING_VIDEO_MP4, "1D_pendulum/Video/Pendulum_training{}.mp4".format(self.sim_number),physicsClientId = self.client_id)
+                p.startStateLogging(p.STATE_LOGGING_VIDEO_MP4, "/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/Video/Pendulum_training{}.mp4".format(self.sim_number),physicsClientId = self.client_id)
             self.observeState()
         else:
             raise Exception("Simulation not set up")
