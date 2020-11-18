@@ -3,22 +3,28 @@ from gym import spaces
 from gym.utils import seeding
 import numpy as np
 from os import path
+from robot_bullet import Robot
 
 
-class PendulumEnv(gym.Env):
-    metadata = {
-        'render.modes': ['human', 'rgb_array'],
-        'video.frames_per_second': 30
-    }
+class PendulumPyB(gym.Env):
 
-    def __init__(self, g=10.0):
+    metadata = {'render.modes': ['human']}
+
+    def __init__(self):
         self.max_speed = 8
         self.max_torque = 2.
-        self.dt = .05
-        self.g = g
-        self.m = 1.
-        self.l = 1.
-        self.viewer = None
+        #self.dt = .05
+        #self.viewer = None
+        
+        self.robot = Robot("single_pendulum.urdf")
+        self.robot.GUI_ENABLED = 0
+        self.robot.setupSim()
+        self.robot.SINCOS = 1
+        self.reward_weights  = [1.,0.0,0.0]
+        
+        
+        
+        
 
         high = np.array([1., 1., self.max_speed], dtype=np.float32)
         self.action_space = spaces.Box(
@@ -32,42 +38,31 @@ class PendulumEnv(gym.Env):
             dtype=np.float32
         )
 
-        self.seed()
 
-    def seed(self, seed=None):
-        self.np_random, seed = seeding.np_random(seed)
-        return [seed]
 
     def step(self, u):
-        th, thdot = self.state  # th := theta
+       
 
-        g = self.g
-        m = self.m
-        l = self.l
-        dt = self.dt
+        
+        #dt = self.dt
 
-        u = np.clip(u, -self.max_torque, self.max_torque)[0]
-        self.last_u = u  # for rendering
-        costs = angle_normalize(th) ** 2 + .1 * thdot ** 2 + .001 * (u ** 2)
+        #u = np.clip(u, -self.max_torque, self.max_torque)[0]
+        self.robot.simulateDyn([u])
+        reward = -angle_normalize(self.robot.states[1][3])**2*self.reward_weights[0]-self.robot.states_dot[1][3]**2*self.reward_weights[1] - self.reward_weights[2] * (u ** 2)
 
-        newthdot = thdot + (-3 * g / (2 * l) * np.sin(th + np.pi) + 3. / (m * l ** 2) * u) * dt
-        newth = th + newthdot * dt
-        newthdot = np.clip(newthdot, -self.max_speed, self.max_speed)
 
-        self.state = np.array([newth, newthdot])
-        return self._get_obs(), -costs, False, {}
+        return self._get_obs(), reward, False, {}
 
     def reset(self):
-        high = np.array([np.pi, 1])
-        self.state = self.np_random.uniform(low=-high, high=high)
-        self.last_u = None
+        self.robot.resetRobot()
         return self._get_obs()
 
     def _get_obs(self):
-        theta, thetadot = self.state
-        return np.array([np.cos(theta), np.sin(theta), thetadot])
+        self.robot.observeState()
+        return np.array([self.robot.states_sincos[1][0], self.robot.states_sincos[1][1],self.robot.states_dot[1][3]])
+    
 
-    def render(self, mode='human'):
+    """ def render(self, mode='human'):
         if self.viewer is None:
             from gym.envs.classic_control import rendering
             self.viewer = rendering.Viewer(500, 500)
@@ -90,12 +85,12 @@ class PendulumEnv(gym.Env):
         if self.last_u:
             self.imgtrans.scale = (-self.last_u / 2, np.abs(self.last_u) / 2)
 
-        return self.viewer.render(return_rgb_array=mode == 'rgb_array')
+        return self.viewer.render(return_rgb_array=mode == 'rgb_array') """
 
-    def close(self):
+    """ def close(self):
         if self.viewer:
             self.viewer.close()
-            self.viewer = None
+            self.viewer = None """
 
 
 def angle_normalize(x):

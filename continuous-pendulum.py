@@ -36,7 +36,7 @@ REPLAY_SIZE             = 10000          # Size of replay buffer
 BATCH_SIZE              = 64            # Number of points to be fed in stochastic gradient
 NH1 = NH2               = 250           # Hidden layer size
 
-reward_wheights  = [1.,0.0,0.00]
+reward_weights  = [1.,0.0,0.00]
 
 
 sim_number = 6
@@ -176,7 +176,7 @@ if __name__ == "__main__":
             env_rend.simulateDyn([u[0][0]])
             x=np.array([[env_rend.states_sincos[1][0],env_rend.states_sincos[1][1],
                        env_rend.states_dot[1][3]]])
-            reward =  -(angle_normalize(env_rend.states[1][3]))**2*reward_wheights[0]-env_rend.states_dot[1][3]**2*reward_wheights[1] - reward_wheights[2] * (u[0][0] ** 2)
+            reward =  -(angle_normalize(env_rend.states[1][3]))**2*reward_weights[0]-env_rend.states_dot[1][3]**2*reward_weights[1] - reward_weights[2] * (u[0][0] ** 2)
             #print(reward)
             time.sleep(1e-2)
             rsum += reward
@@ -209,7 +209,7 @@ if __name__ == "__main__":
             x2 = np.array([env.states_sincos[1][0],env.states_sincos[1][1],
                        env.states_dot[1][3]])   
             #print(x2)
-            r = -angle_normalize(env.states[1][3])**2*reward_wheights[0]-env.states_dot[1][3]**2*reward_wheights[1] - reward_wheights[2] * (u[0][0] ** 2)
+            r = -angle_normalize(env.states[1][3])**2*reward_weights[0]-env.states_dot[1][3]**2*reward_weights[1] - reward_weights[2] * (u[0][0] ** 2)
             done    = False                                              # pendulum scenario is endless.
             #print(r)
             replayDeque.append(ReplayItem(x,u,r,done,x2))                # Feed replay memory ...
@@ -284,7 +284,7 @@ if __name__ == "__main__":
     f.close()
 
     f=open('/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/config{}.txt'.format(sim_number), 'w')
-    f.write("NEPISODES = "+str(NEPISODES)+", NSTEPS = "+str(NSTEPS)+", QVALUE_LEARNING_RATE = "+str(QVALUE_LEARNING_RATE)+", POLICY_LEARNING_RATE = "+str(POLICY_LEARNING_RATE)+", DECAY_RATE = "+str(DECAY_RATE)+", UPDATE_RATE = "+str(UPDATE_RATE)+", REPLAY_SIZE"+str(REPLAY_SIZE)+", BATCH_SIZE"+str(BATCH_SIZE)+", NH1 = "+str(NH1)+", NH2 = "+str(NH2) + ",reward weights = "+str(reward_wheights)
+    f.write("NEPISODES = "+str(NEPISODES)+", NSTEPS = "+str(NSTEPS)+", QVALUE_LEARNING_RATE = "+str(QVALUE_LEARNING_RATE)+", POLICY_LEARNING_RATE = "+str(POLICY_LEARNING_RATE)+", DECAY_RATE = "+str(DECAY_RATE)+", UPDATE_RATE = "+str(UPDATE_RATE)+", REPLAY_SIZE"+str(REPLAY_SIZE)+", BATCH_SIZE"+str(BATCH_SIZE)+", NH1 = "+str(NH1)+", NH2 = "+str(NH2) + ",reward weights = "+str(reward_weights)
             +"RANDOM RESET = "+str(RANDSET)+"step_expl = "+ str(step_expl)+"epi_expl = "+ str(epi_expl)+"range_esp = "+ str(range_esp))
     f.close() 
 
