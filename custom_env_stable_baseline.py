@@ -22,8 +22,8 @@ class PendulumPyB(gym.Env):
         self.robot.SINCOS = 1
         self.reward_weights  = [1.,0.0,0.0]
         
-        
-        
+        self.step_count = 0
+        self.episode_duration=150
         
 
         high = np.array([1., 1., self.max_speed], dtype=np.float32)
@@ -45,13 +45,15 @@ class PendulumPyB(gym.Env):
 
         
         #dt = self.dt
-
+        self.step_count +=1
+        end_episode = False
         #u = np.clip(u, -self.max_torque, self.max_torque)[0]
-        self.robot.simulateDyn([u])
+        u.tolist()
+        self.robot.simulateDyn([u[0]])
         reward = -angle_normalize(self.robot.states[1][3])**2*self.reward_weights[0]-self.robot.states_dot[1][3]**2*self.reward_weights[1] - self.reward_weights[2] * (u ** 2)
 
-
-        return self._get_obs(), reward, False, {}
+        if not self.step_count%self.episode_duration: end_episode=True
+        return self._get_obs(), reward, end_episode, {}
 
     def reset(self):
         self.robot.resetRobot()
@@ -94,4 +96,4 @@ class PendulumPyB(gym.Env):
 
 
 def angle_normalize(x):
-    return (((x+np.pi) % (2*np.pi)) - np.pi)
+    return min(x%(2*np.pi),abs(x%(2*np.pi)-2*np.pi))

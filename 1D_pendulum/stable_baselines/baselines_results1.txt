@@ -1,0 +1,1 @@
+Elapsed time = 110.71569609642029, Mean reward (20 eps) = -99.293365,Std reward = 7.6293945e-06

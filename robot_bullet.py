@@ -19,7 +19,7 @@ class Robot:
         self.SINCOS = 0
         self.RANDSET =0
         
-        self.video_path = "/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/Video"
+        self.video_path = "/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/continuous/Video"
         
         
         self.client_id = 0
@@ -35,6 +35,7 @@ class Robot:
         self.observed_index = []
         
         self.joint_limits_high = []
+        self.max_torque = 2.0
 
     def setupSim(self):
         
@@ -107,7 +108,10 @@ class Robot:
         
     def simulateDyn(self,actions):
         if self.SIM_READDY==1: 
-            p.setJointMotorControlArray(self.body_id, self.actuated_index, p.TORQUE_CONTROL, forces=actions,physicsClientId = self.client_id)
+            
+            bounded = np.clip(np.array(actions),-self.max_torque,self.max_torque).tolist()
+            
+            p.setJointMotorControlArray(self.body_id, self.actuated_index, p.TORQUE_CONTROL, forces=bounded,physicsClientId = self.client_id)
             p.stepSimulation(physicsClientId = self.client_id)
             if self.LOGDATA==1:
                 self.actions_seq.append(actions)
@@ -173,13 +177,13 @@ class Robot:
 
 if __name__ == "__main__":
 
-    pendulum = Robot("single_pendulum.urdf",time_step=0.01)
+    pendulum = Robot("double_pendulum.urdf",time_step=0.01)
     
     #pendulum.LOGDATA=1
     pendulum.setupSim()
     
     for i in range (100):
-     pendulum.simulateDyn([1.0])
+     pendulum.simulateDyn([1.0,0.0])
     
     pendulum.stopSim
 

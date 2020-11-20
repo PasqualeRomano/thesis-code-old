@@ -15,6 +15,8 @@ import signal
 import matplotlib.pyplot as plt
 from robot_bullet import Robot
 import json
+import training_config as tc
+
 
 tf.compat.v1.disable_eager_execution()
 RANDOM_SEED = int((time.time()%10)*1000)
@@ -26,35 +28,35 @@ n_init = tf.keras.initializers.TruncatedNormal(seed=RANDOM_SEED)
 u_init = tf.keras.initializers.RandomUniform(minval=-2., maxval=2., seed=RANDOM_SEED)
 
 
-NEPISODES               = 200           # Max training steps
-NSTEPS                  = 150           # Max episode length
-QVALUE_LEARNING_RATE    = 0.001         # Base learning rate for the Q-value Network
-POLICY_LEARNING_RATE    = 0.0001        # Base learning rate for the policy network
-DECAY_RATE              = 0.99          # Discount factor 
-UPDATE_RATE             = 0.01           # Homotopy rate to update the networks
-REPLAY_SIZE             = 10000          # Size of replay buffer
-BATCH_SIZE              = 64            # Number of points to be fed in stochastic gradient
-NH1 = NH2               = 250           # Hidden layer size
+NEPISODES               = tc.NEPISODES                  # Max training steps
+NSTEPS                  = tc.NSTEPS                     # Max episode length
+QVALUE_LEARNING_RATE    = tc.QVALUE_LEARNING_RATE       # Base learning rate for the Q-value Network
+POLICY_LEARNING_RATE    = tc.POLICY_LEARNING_RATE       # Base learning rate for the policy network
+DECAY_RATE              = tc.DECAY_RATE                 # Discount factor 
+UPDATE_RATE             = tc.UPDATE_RATE                # Homotopy rate to update the networks
+REPLAY_SIZE             = tc.REPLAY_SIZE                # Size of replay buffer
+BATCH_SIZE              = tc.BATCH_SIZE                 # Number of points to be fed in stochastic gradient
+NH1 = NH2               = tc.NH1                        # Hidden layer size
+range_esp               = tc.range_esp
 
 reward_weights  = [1.,0.0,0.00]
 
 
-sim_number = 6
+sim_number = 10
 RANDSET =0
 env                 = Robot("single_pendulum.urdf")       
 env_rend            = Robot("single_pendulum.urdf",sim_number=sim_number) #for rendering
 
 env.RANDSET = 0
 
-range_esp = 10.
-step_expl = 10000000.
-epi_expl = 50.
+step_expl = 0.
+epi_expl = 0.
 
 NX                  = 3          # ... training converges with q,qdot with 2x more neurones.
 NU                  = 1            # Control is dim-1: joint torque
 
 def angle_normalize(x):
-    return x #((x+np.pi) % (2*np.pi)) - np.pi
+    return min(x%(2*np.pi),abs(x%(2*np.pi)-2*np.pi))
 
 class QValueNetwork:
     def __init__(self):
@@ -107,7 +109,7 @@ class PolicyNetwork:
         # Define Sequential model with 3 layers
         net = layers.Dense(NH1, activation="relu", kernel_initializer=n_init, name="net")(x)
         net = layers.Dense(NH2, activation="relu", kernel_initializer=n_init, name="net2")(net)
-        policy = layers.Dense(NU, activation="tanh", kernel_initializer=u_init, name="netu1")(net)*1 #1nm max torque
+        policy = layers.Dense(NU, activation="tanh", kernel_initializer=u_init, name="netu1")(net)*2. #1nm max torque
 
         policy_model = keras.Model(
             inputs=[x],
@@ -160,9 +162,9 @@ if __name__ == "__main__":
     sess            = tf.compat.v1.InteractiveSession()
     tf.compat.v1.global_variables_initializer().run()
 
-    env_rend.SINCOS = 1
-    env_rend.GUI_ENABLED = 1
-    env_rend.setupSim() 
+    # env_rend.SINCOS = 1
+    # env_rend.GUI_ENABLED = 1
+    # env_rend.setupSim() 
 
 
     def rendertrial(maxiter=NSTEPS,verbose=True):
@@ -194,6 +196,7 @@ if __name__ == "__main__":
     env.GUI_ENABLED=0 
     env.SINCOS = 1
     env.setupSim() 
+    start_time = time.time()
     for episode in range(1,NEPISODES):
         env.resetRobot()
         x    = np.array([[env.states_sincos[1][0],env.states_sincos[1][1],
@@ -203,7 +206,9 @@ if __name__ == "__main__":
  
         for step in range(NSTEPS):
             u       = sess.run(policy.policy, feed_dict={ policy.x: x }) # Greedy policy ...
-            u      += np.random.uniform(-range_esp,range_esp) / (1. + episode/epi_expl + step/step_expl )                        # ... with noise
+            #u      += np.random.uniform(-range_esp,range_esp) / (1. + episode/epi_expl + step/step_expl )   #add gaussian noise                      # ... with noise
+            u      += np.random.normal(loc=0.0,scale=range_esp)
+            
             #print(u[0][0])
             env.simulateDyn([u[0][0]])
             x2 = np.array([env.states_sincos[1][0],env.states_sincos[1][1],
@@ -264,35 +269,43 @@ if __name__ == "__main__":
         h_rwd.append(rsum) 
         h_qva.append(maxq)
         h_ste.append(step)
-        if not (episode+1) % 15:     rendertrial()
+        # if not (episode+1) % 15:     rendertrial()
 
     # \\\END_FOR episode in range(NEPISODES)
+    end_time=time.time()
+    elapsed_time = end_time-start_time
+    print('elapsed '+str(elapsed_time)+'s')
     env.stopSim()
 
     print("Average reward during trials: %.3f" % (sum(h_rwd)/NEPISODES))
 
-    # env_rend.SINCOS = 1
-    # env_rend.GUI_ENABLED = 1
-    # env_rend.setupSim()
+    env_rend.SINCOS = 1
+    env_rend.GUI_ENABLED = 1
+    env_rend.setupSim()
     env_rend.LOGDATA=1   ####@@@@@@@@@@@@@@@@############@@@@@@@@@@@@@@@@@@@@#############@@@@@@@@
     rendertrial()
     env_rend.stopSim()
 
 
-    f=open('/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/hrwd{}.txt'.format(sim_number), 'w')
+    f=open('/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/continuous/hrwd{}.txt'.format(sim_number), 'w')
     f.write(json.dumps(h_rwd))
     f.close()
 
-    f=open('/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/config{}.txt'.format(sim_number), 'w')
+    f=open('/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/continuous/config{}.txt'.format(sim_number), 'w')
     f.write("NEPISODES = "+str(NEPISODES)+", NSTEPS = "+str(NSTEPS)+", QVALUE_LEARNING_RATE = "+str(QVALUE_LEARNING_RATE)+", POLICY_LEARNING_RATE = "+str(POLICY_LEARNING_RATE)+", DECAY_RATE = "+str(DECAY_RATE)+", UPDATE_RATE = "+str(UPDATE_RATE)+", REPLAY_SIZE"+str(REPLAY_SIZE)+", BATCH_SIZE"+str(BATCH_SIZE)+", NH1 = "+str(NH1)+", NH2 = "+str(NH2) + ",reward weights = "+str(reward_weights)
             +"RANDOM RESET = "+str(RANDSET)+"step_expl = "+ str(step_expl)+"epi_expl = "+ str(epi_expl)+"range_esp = "+ str(range_esp))
     f.close() 
-
+    
+    f=open('/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/continuous/' + 'continuous_results{}.txt'.format(1), 'w')
+    f.write("Elapsed time = "+str(elapsed_time))#+", Mean reward (20 eps) = "+str(mean_reward)+",Std reward = "+str(std_reward) )
+    f.close()
+    
     plt.plot( np.cumsum(h_rwd)/list(range(1,NEPISODES)))
     plt.grid(True)
     #plt.show()
-    plt.savefig('/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/reward{}.png'.format(sim_number))
+    plt.savefig('/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/continuous/reward{}.png'.format(sim_number))
 
+    policy.model.save("DDPG_continuous_saved.h5")
 
 
 #LOG VIDEO
