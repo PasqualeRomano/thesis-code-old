@@ -158,9 +158,13 @@ if __name__ == "__main__":
  
     qvalue          = QValueNetwork(). setupOptim()
     qvalueTarget    = QValueNetwork(). setupTargetAssign(qvalue)
-
+    
+    
+    model_save = 'DDPG_continuous_saved.chkpt'
+    
     sess            = tf.compat.v1.InteractiveSession()
     tf.compat.v1.global_variables_initializer().run()
+    tf_saver = tf.compat.v1.train.Saver(tf.compat.v1.global_variables())
 
     # env_rend.SINCOS = 1
     # env_rend.GUI_ENABLED = 1
@@ -304,9 +308,8 @@ if __name__ == "__main__":
     plt.grid(True)
     #plt.show()
     plt.savefig('/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/continuous/reward{}.png'.format(sim_number))
+    
 
-    policy.model.save("DDPG_continuous_saved.h5")
+    tf_saver.save(sess, model_save)
 
-
-#LOG VIDEO
 

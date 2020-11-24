@@ -34,7 +34,7 @@ class Robot:
         self.actuated_index = []
         self.observed_index = []
         
-        self.joint_limits_high = []
+        
         self.max_torque = 2.0
 
     def setupSim(self):
@@ -63,6 +63,13 @@ class Robot:
         self.SIM_READDY = 1
         p.setTimeStep(self.time_step,self.client_id)
         self.loadRobot()
+        
+         
+        self.pos_limits_high = [np.pi for i in range(p.getNumJoints(self.body_id))]                         #rad
+        self.pos_limits_low = [-np.pi for i in range(p.getNumJoints(self.body_id))]
+        
+        self.vel_limits_high = [0.7*np.pi for i in range(p.getNumJoints(self.body_id)) ]
+        self.vel_limits_low = [-0.7*np.pi for i in range(p.getNumJoints(self.body_id)) ]
         
         p.stepSimulation(physicsClientId = self.client_id) 
         self.initial_frame = p.saveState(physicsClientId = self.client_id)
@@ -144,16 +151,14 @@ class Robot:
         if self.SIM_READDY==1: 
             p.restoreState(self.initial_frame,physicsClientId = self.client_id)
             if self.RANDSET==1:
+            
+               
+                rnd_pos  = np.random.uniform(low=np.array(self.pos_limits_low), high=np.array(self.pos_limits_high)).tolist()
+                rnd_vel = np.random.uniform(low=np.array(self.pos_limits_low), high=np.array(self.pos_limits_high)).tolist()
                 
-               # for i in range(p.getNumJoints(self.body_id,physicsClientId=self.client_id)):
-                    
+                for i in range(p.getNumJoints(self.body_id)):
                 
-                
-                high = np.array([np.pi,0.,0.])
-                high_vel= np.array([8.,0,0])
-                rnd_pos  = np.random.uniform(low=-high, high=high)
-                rnd_vel = np.random.uniform(low=-high_vel, high=high_vel)
-                p.resetJointStateMultiDof(self.body_id,self.ACTUATED_JOINTS_INDEX,rnd_pos.tolist(),targetVelocity= rnd_vel.tolist(),physicsClientId = self.client_id) #####
+                    p.resetJointState(self.body_id,i,rnd_pos[i],targetVelocity= rnd_vel[i],physicsClientId = self.client_id) #####
                 
             if self.LOGDATA==1:
                 self.state_seq = []
@@ -177,13 +182,13 @@ class Robot:
 
 if __name__ == "__main__":
 
-    pendulum = Robot("double_pendulum.urdf",time_step=0.01)
+    pendulum = Robot("single_pendulum.urdf",time_step=0.01)
     
     #pendulum.LOGDATA=1
     pendulum.setupSim()
     
     for i in range (100):
-     pendulum.simulateDyn([1.0,0.0])
+     pendulum.simulateDyn([1.0])
     
     pendulum.stopSim
 

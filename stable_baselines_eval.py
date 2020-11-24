@@ -29,7 +29,7 @@ model = DDPG.load("ddpg_pendulum_stb_baselines")
 
 robot = Robot("single_pendulum.urdf")
 robot.sim_number=1
-RANDSET =0
+robot.RANDSET =0
 robot.GUI_ENABLED = 0
 robot.SINCOS=1
 path_log= "/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/stable_baselines/"
@@ -40,6 +40,10 @@ robot.setupSim()
 #env = PendulumPyB()
 
 #Check convergence
+#confronta 
+#convergenza
+#tempo di training
+#average reward
 up_reach = False
 h_sum_last =0
 for i in range(NSTEPS):
@@ -48,7 +52,7 @@ for i in range(NSTEPS):
     action, _states = model.predict(obs)
     action=action.tolist()
     robot.simulateDyn(action)
-    time.sleep(0.1)
+    
          
     if angle_normalize(robot.states[1][3]) < 1*np.pi/180 and up_reach == False:
          first_step_up = i
@@ -58,14 +62,49 @@ for i in range(NSTEPS):
         h_sum_last+= -angle_normalize(robot.states[1][3])**2
 
 h_mean_last = h_sum_last/NSTEPS
-print("mean return 20 last episodes: "+str(h_mean_last)+", first reached top at "+str(first_step_up))
+print("mean return 20 last steps: "+str(h_mean_last)+", first reached top at "+str(first_step_up))
 
 robot.stopSim()  
+#mean return 20 last steps: -9.476149966369109e-05, first reached top at 64
 
 
+#valuta policy con (10x)random reset 
+#salvare a che step arriva in posizione verticale (anche con random reset)
+robot = Robot("single_pendulum.urdf")
+robot.sim_number=1
+robot.RANDSET =1
+robot.GUI_ENABLED = 1
+robot.SINCOS=1
+path_log= "/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/stable_baselines/"
+robot.setupSim()
+up_reach = False
+h_sum_last =0
+h_mean_last_list = []
+first_step_up_list = []
+for j in range (20):
+    up_reach = False
+    robot.resetRobot()
+    for i in range(NSTEPS):
+            
+        obs = np.array([robot.states_sincos[1][0],robot.states_sincos[1][1],robot.states_dot[1][3]])
+        action, _states = model.predict(obs)
+        action=action.tolist()
+        robot.simulateDyn(action)
+            
+        if angle_normalize(robot.states[1][3]) < 1*np.pi/180 and up_reach == False:
+            first_step_up = i
+            up_reach = True
+            
+        if i >= NSTEPS -1:
+            h_sum_last+= -angle_normalize(robot.states[1][3])**2
 
+    h_mean_last_list.append(h_sum_last/NSTEPS)
+    first_step_up_list.append(first_step_up)
+    first_step_up = 10000
+print(" (RANDSET) mean return 20 last episodes: "+str(sum(h_mean_last_list)/len(h_mean_last_list))+", first reached top at "+str(sum(first_step_up_list)/len(first_step_up_list)))
 
-
+robot.stopSim()  
+#(RANDSET) mean return 20 last episodes: -0.002175390072075337, first reached top at 37.4
 
 # f=open(path_log + 'baselines_config{}.txt'.format(robot.sim_number), 'w')
 # f.write("NEPISODES = "+str(NEPISODES)+", NSTEPS = "+str(NSTEPS)+", QVALUE_LEARNING_RATE = "+str(QVALUE_LEARNING_RATE)+", POLICY_LEARNING_RATE = "+str(POLICY_LEARNING_RATE)+", DECAY_RATE = "+str(DECAY_RATE)+", UPDATE_RATE = "+str(UPDATE_RATE)+", REPLAY_SIZE"+str(REPLAY_SIZE)+", BATCH_SIZE"+str(BATCH_SIZE)+", NH1 = "+str(NH1)+", NH2 = "+str(NH2) + ",reward weights = "+str(reward_weights)
@@ -77,3 +116,4 @@ robot.stopSim()
 #average reward
 #valuta policy con (10x)random reset 
 #salvare a che step arriva in posizione verticale (anche con random reset)
+
