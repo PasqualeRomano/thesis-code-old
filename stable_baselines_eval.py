@@ -6,7 +6,7 @@ from stable_baselines.ddpg.policies import MlpPolicy #multilayerperceptor type o
 from stable_baselines.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise, AdaptiveParamNoiseSpec
 from stable_baselines.common.evaluation import evaluate_policy
 from stable_baselines import DDPG
-from custom_env_stable_baseline import PendulumPyB
+from custom_env_stable_baselines import PendulumPyB
 import training_config as tc
 
 env = PendulumPyB()
@@ -46,6 +46,7 @@ robot.setupSim()
 #average reward
 up_reach = False
 h_sum_last =0
+c = 100000000
 for i in range(NSTEPS):
         
     obs = np.array([robot.states_sincos[1][0],robot.states_sincos[1][1],robot.states_dot[1][3]])
@@ -53,16 +54,14 @@ for i in range(NSTEPS):
     action=action.tolist()
     robot.simulateDyn(action)
     
-         
-    if angle_normalize(robot.states[1][3]) < 1*np.pi/180 and up_reach == False:
-         first_step_up = i
-         up_reach = True
-         
+    if angle_normalize(robot.states[1][3])**2<c:  
+        c = angle_normalize(robot.states[1][3])**2 
+        step_max = i
     if i >= NSTEPS -1:
         h_sum_last+= -angle_normalize(robot.states[1][3])**2
 
 h_mean_last = h_sum_last/NSTEPS
-print("mean return 20 last steps: "+str(h_mean_last)+", first reached top at "+str(first_step_up))
+print("mean return 20 last steps: "+str(h_mean_last)+", max reward reached is "+str(-c)+ " in step number "+str(step_max))
 
 robot.stopSim()  
 #mean return 20 last steps: -9.476149966369109e-05, first reached top at 64
@@ -90,7 +89,7 @@ for j in range (20):
         action, _states = model.predict(obs)
         action=action.tolist()
         robot.simulateDyn(action)
-            
+        time.sleep(0.1)
         if angle_normalize(robot.states[1][3]) < 1*np.pi/180 and up_reach == False:
             first_step_up = i
             up_reach = True
@@ -104,7 +103,7 @@ for j in range (20):
 print(" (RANDSET) mean return 20 last episodes: "+str(sum(h_mean_last_list)/len(h_mean_last_list))+", first reached top at "+str(sum(first_step_up_list)/len(first_step_up_list)))
 
 robot.stopSim()  
-#(RANDSET) mean return 20 last episodes: -0.002175390072075337, first reached top at 37.4
+#(RANDSET) mean return 20 last episodes: -0.0001268793446133105, first reached top at 21.05
 
 # f=open(path_log + 'baselines_config{}.txt'.format(robot.sim_number), 'w')
 # f.write("NEPISODES = "+str(NEPISODES)+", NSTEPS = "+str(NSTEPS)+", QVALUE_LEARNING_RATE = "+str(QVALUE_LEARNING_RATE)+", POLICY_LEARNING_RATE = "+str(POLICY_LEARNING_RATE)+", DECAY_RATE = "+str(DECAY_RATE)+", UPDATE_RATE = "+str(UPDATE_RATE)+", REPLAY_SIZE"+str(REPLAY_SIZE)+", BATCH_SIZE"+str(BATCH_SIZE)+", NH1 = "+str(NH1)+", NH2 = "+str(NH2) + ",reward weights = "+str(reward_weights)

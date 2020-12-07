@@ -101,8 +101,8 @@
     <axis
       xyz="1 0 0" />
     <limit
-      effort="10"
-      velocity="50" />
+      effort="1000"
+      velocity="1000" />
     <dynamics
       damping="0.05" />
   </joint>

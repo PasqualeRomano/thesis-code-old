@@ -26,7 +26,7 @@ np .random.seed     (RANDOM_SEED)
 tf.compat.v1.set_random_seed(RANDOM_SEED)
 random.seed         (RANDOM_SEED)
 n_init = tf.keras.initializers.TruncatedNormal(seed=RANDOM_SEED)
-u_init = tf.keras.initializers.RandomUniform(minval=-3e-3, maxval=3e-3, seed=RANDOM_SEED) #check weights #######
+u_init = tf.keras.initializers.RandomUniform(minval=-0.3, maxval=0.3, seed=RANDOM_SEED) #check weights #######
 
 
 NEPISODES               = tc.NEPISODES                  # Max training steps

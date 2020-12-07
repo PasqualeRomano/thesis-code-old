@@ -128,7 +128,7 @@ class Robot:
         
         
     def loadRobot(self):
-        self.body_id = p.loadURDF(self.load_file,self.init_pos,self.init_or,physicsClientId = self.client_id)
+        self.body_id = p.loadURDF(self.load_file,self.init_pos,self.init_or,physicsClientId = self.client_id,flags = p.URDF_USE_INERTIA_FROM_FILE)
         
         self.getActuatedJoints()            
         p.setJointMotorControlArray(self.body_id, self.actuated_index, p.VELOCITY_CONTROL, 

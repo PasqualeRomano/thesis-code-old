@@ -1,0 +1,8 @@
+-capire struttura critic e agent reti neurali stable baselines
+-capire come inizializzare pesi di inizializzazione
+-capire come specificare update rate o capire quale è usato
+
+-impostare come stato goal del training anche la velocità (non 0)
+
+
+-dopo aver capito come funzionano le reti neurali , impostare i pesi delle reti costanti per testare e togliere esplorazione
