@@ -30,15 +30,15 @@ u_init = tf.keras.initializers.RandomUniform(minval=-3e-3, maxval=3e-3, seed=RAN
 
 
 NEPISODES               = tc.NEPISODES                  # Max training steps
-NSTEPS                  = tc.NSTEPS                     # Max episode length
+NSTEPS                  = tc.NSTEPS                     # Max episode length 
 QVALUE_LEARNING_RATE    = tc.QVALUE_LEARNING_RATE       # Base learning rate for the Q-value Network
 POLICY_LEARNING_RATE    = tc.POLICY_LEARNING_RATE       # Base learning rate for the policy network
 DECAY_RATE              = tc.DECAY_RATE                 # Discount factor 
 UPDATE_RATE             = tc.UPDATE_RATE                # Homotopy rate to update the networks
 REPLAY_SIZE             = tc.REPLAY_SIZE                # Size of replay buffer
 BATCH_SIZE              = tc.BATCH_SIZE                 # Number of points to be fed in stochastic gradient
-NH1 = NH2               = tc.NH1                        # Hidden layer size
-
+NH1                     = tc.NH1
+NH2                     = tc.NH2                        # Hidden layer size
 range_esp               = tc.range_esp
 
 reward_weights  = [1.,0.0,0.00]

@@ -4,7 +4,7 @@ from gym.utils import seeding
 import numpy as np
 from os import path
 from robot_bullet import Robot
-
+import training_config as tc
 
 class PendulumPyB(gym.Env):
 
@@ -17,13 +17,14 @@ class PendulumPyB(gym.Env):
         #self.viewer = None
         
         self.robot = Robot("single_pendulum.urdf")
+        self.robot.time_step = .01
         self.robot.GUI_ENABLED = 0
         self.robot.setupSim()
         self.robot.SINCOS = 1
         self.reward_weights  = [1.,0.0,0.0]
         
         self.step_count = 0
-        self.episode_duration=150
+        self.episode_duration=tc.NSTEPS
         
 
         high = np.array([1., 1., self.max_speed], dtype=np.float32)

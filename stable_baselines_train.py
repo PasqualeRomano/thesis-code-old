@@ -3,7 +3,7 @@ import time
 import numpy as np
 from robot_bullet import Robot
 #from stable_baselines.ddpg.policies import MlpPolicy #multilayerperceptor type of neural netwrok (fully connected
-from custom_policy_stable_baselines import CustomPolicy, CustomPolicy_2
+from custom_policy_stable_baselines import CustomPolicy_2,CustomPolicy_4
 from stable_baselines.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise, AdaptiveParamNoiseSpec
 from stable_baselines.common.evaluation import evaluate_policy
 from stable_baselines import DDPG
@@ -23,8 +23,17 @@ DECAY_RATE              = tc.DECAY_RATE                 # Discount factor
 UPDATE_RATE             = tc.UPDATE_RATE                # Homotopy rate to update the networks
 REPLAY_SIZE             = tc.REPLAY_SIZE                # Size of replay buffer
 BATCH_SIZE              = tc.BATCH_SIZE                 # Number of points to be fed in stochastic gradient
-NH1 = NH2               = tc.NH1                        # Hidden layer size
+NH1                     = tc.NH1
+NH2                     = tc.NH2                        # Hidden layer size
 range_esp               = tc.range_esp
+
+##Training policies
+#CustomPolicy_3 
+#CustomPolicy_2  Standard mlp stable baselines policy with modified layer-size
+#CustomPolicy_4  Modified initialization of layers and layer-size
+policy = CustomPolicy_4
+
+
 
 
 env.episode_duration = NSTEPS
@@ -33,7 +42,7 @@ n_actions = env.action_space.shape[-1]
 param_noise = None
 action_noise =  NormalActionNoise(0,range_esp)
 #
-model = DDPG(CustomPolicy, env, verbose=1,nb_train_steps=NSTEPS, nb_rollout_steps=NSTEPS,nb_eval_steps=NSTEPS,gamma=DECAY_RATE, param_noise=None, action_noise=action_noise,batch_size=BATCH_SIZE,actor_lr=POLICY_LEARNING_RATE,
+model = DDPG(policy, env, verbose=1,nb_train_steps=NSTEPS, nb_rollout_steps=NSTEPS,nb_eval_steps=NSTEPS,gamma=DECAY_RATE, param_noise=None, action_noise=action_noise,batch_size=BATCH_SIZE,actor_lr=POLICY_LEARNING_RATE,
                critic_lr =  QVALUE_LEARNING_RATE,buffer_size=REPLAY_SIZE,tau= UPDATE_RATE)
 
 
@@ -58,7 +67,7 @@ env.robot.stopSim()
 # model = DDPG.load("ddpg_pendulum_stb_baselines")
 
 robot = Robot("single_pendulum.urdf")
-robot.sim_number=0
+robot.sim_number=1.1
 RANDSET =0
 robot.LOGDATA = 1
 robot.SINCOS=1
@@ -82,7 +91,7 @@ robot.stopSim()
 
 f=open(path_log + 'baselines_config{}.txt'.format(robot.sim_number), 'w')
 f.write("NEPISODES = "+str(NEPISODES)+"\nNSTEPS = "+str(NSTEPS)+"\nQVALUE_LEARNING_RATE = "+str(QVALUE_LEARNING_RATE)+"\nPOLICY_LEARNING_RATE = "+str(POLICY_LEARNING_RATE)+"\nDECAY_RATE = "+str(DECAY_RATE)+"\nUPDATE_RATE = "+str(UPDATE_RATE)+"\nREPLAY_SIZE"+str(REPLAY_SIZE)+"\nBATCH_SIZE"+str(BATCH_SIZE)+"\nNH1 = "+str(NH1)+"\nNH2 = "+str(NH2) + "\nreward weights = "+str(0)
-           +"\nRANDOM RESET = "+str(RANDSET)+"\nstep_expl = "+ str(0)+"\nepi_expl = "+ str(0)+"\nrange_esp = "+ str(range_esp)+"\nElapsed time = "+str(elapsed_time)+"\nMean reward (20 eps) = "+str(mean_reward)+"\nStd reward = "+str(std_reward))
+           +"\nRANDOM RESET = "+str(RANDSET)+"\nstep_expl = "+ str(0)+"\nepi_expl = "+ str(0)+"\nrange_esp = "+ str(range_esp)+"\nElapsed time = "+str(elapsed_time)+"\nMean reward (20 eps) = "+str(mean_reward)+"\nStd reward = "+str(std_reward)+"\nPolicy = "+str(policy))
 f.close() 
 
 #confronta 

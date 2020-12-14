@@ -1,5 +1,5 @@
 NEPISODES = 200
-NSTEPS = 200
+NSTEPS = 300
 QVALUE_LEARNING_RATE = 0.001
 POLICY_LEARNING_RATE = 0.0001
 DECAY_RATE = 0.99
@@ -13,7 +13,7 @@ RANDOM RESET = 0
 step_expl = 0
 epi_expl = 0
 range_esp = 2.0
-Elapsed time = 426.34639739990234
-Mean reward (20 eps) = -43.074688
-Std reward = 7.6293945e-06
+Elapsed time = 750.197502374649
+Mean reward (20 eps) = -38.33624
+Std reward = 0.0
 Policy = <class 'custom_policy_stable_baselines.CustomPolicy_4'>

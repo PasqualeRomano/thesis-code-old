@@ -1,5 +1,6 @@
 import tensorflow as tf
-import numpy as np
+import numpy as np, pandas as pd
+import csv
 from tensorflow import keras
 from tensorflow.keras import layers 
 import random
@@ -9,6 +10,8 @@ import signal
 import matplotlib.pyplot as plt
 from robot_bullet import Robot
 import training_config as tc
+import statistics as st
+
 
 
 tf.compat.v1.disable_eager_execution()
@@ -18,7 +21,7 @@ np .random.seed     (RANDOM_SEED)
 tf.compat.v1.set_random_seed(RANDOM_SEED)
 random.seed         (RANDOM_SEED)
 n_init = tf.keras.initializers.TruncatedNormal(seed=RANDOM_SEED)
-u_init = tf.keras.initializers.RandomUniform(minval=-2., maxval=2., seed=RANDOM_SEED)
+u_init = tf.keras.initializers.RandomUniform(minval=-3e-3, maxval=3e-3, seed=RANDOM_SEED) #check weights #######
 
 
 NEPISODES               = tc.NEPISODES                  # Max training steps
@@ -33,10 +36,12 @@ NH1                     = tc.NH1
 NH2                     = tc.NH2                        # Hidden layer size
 range_esp               = tc.range_esp
 
+range_esp               = tc.range_esp
+
 reward_weights  = [1.,0.0,0.00]
 
 
-sim_number = 10
+sim_number = 2
 RANDSET =0
 env                 = Robot("single_pendulum.urdf")       
 env_rend            = Robot("single_pendulum.urdf",sim_number=sim_number) #for rendering
@@ -60,11 +65,14 @@ class QValueNetwork:
         u       =  keras.Input(shape=(NU,),name="Control")
 
         netx1 = layers.Dense(NH1, activation="relu", kernel_initializer=n_init, name="netx1")(x)
-        netx2 = layers.Dense(NH2, activation="linear", kernel_initializer=n_init, name="netx2")(netx1)
-        netu1 = layers.Dense(NH1, activation="linear", kernel_initializer=n_init, name="netu1")(u)
-        netu2 = layers.Dense(NH2, activation="linear", kernel_initializer=n_init, name="netu2")(netu1)
-        net_act = tf.keras.activations.relu(netx2+netu2)
-        qvalue = layers.Dense(1, activation="linear", kernel_initializer=u_init, name="qvalue")(net_act)
+        net_u = tf.keras.layers.Concatenate(axis=-1)([netx1, u])
+        netx2 = layers.Dense(NH2, activation="relu", kernel_initializer=n_init, name="netx2")(net_u)
+        
+        #netu1 = layers.Dense(NH1, activation="linear", kernel_initializer=n_init, name="netu1")(u)
+        #netu2 = layers.Dense(NH2, activation="linear", kernel_initializer=n_init, name="netu2")(netu1)
+        #net_act = tf.keras.activations.relu(netx2+netu2)
+        
+        qvalue = layers.Dense(1, activation="linear", kernel_initializer=u_init, name="qvalue")(netx2)
         
         qvalue_model = keras.Model(
             inputs=[x,u],
@@ -75,7 +83,7 @@ class QValueNetwork:
         self.u          = u                                # Network control <u> input in Q(x,u)
         self.qvalue     = qvalue                           # Network output  <Q>
         self.variables  = tf.compat.v1.trainable_variables()[nvars:] # Variables to be trained
-        self.hidens = [ netx1, netx2, netu1, netu2 ]                  # Hidden layers for debug
+        self.hidens = [ netx1, netx2 ]                  # Hidden layers for debug
         self.model = qvalue_model
 
     def setupOptim(self):
@@ -103,7 +111,7 @@ class PolicyNetwork:
         # Define Sequential model with 3 layers
         net = layers.Dense(NH1, activation="relu", kernel_initializer=n_init, name="net")(x)
         net = layers.Dense(NH2, activation="relu", kernel_initializer=n_init, name="net2")(net)
-        policy = layers.Dense(NU, activation="tanh", kernel_initializer=u_init, name="netu1")(net)*2. #1nm max torque
+        policy = layers.Dense(NU, activation="tanh", kernel_initializer=u_init, name="netu1")(net)*2. #2nm max torque
 
         policy_model = keras.Model(
             inputs=[x],
@@ -142,7 +150,7 @@ class ReplayItem:
         self.reward     = r
         self.done       = d
         self.x2         = x2
-
+ 
 replayDeque = deque()
  
  
@@ -153,8 +161,8 @@ policyTarget    = PolicyNetwork(). setupTargetAssign(policy)
 qvalue          = QValueNetwork(). setupOptim()
 qvalueTarget    = QValueNetwork(). setupTargetAssign(qvalue)
     
-
-model_save = 'DDPG_continuous_saved.chkpt'
+    
+model_save = 'DDPG_saved.chkpt'
 
 
 sess            = tf.compat.v1.InteractiveSession()
@@ -176,32 +184,57 @@ robot.setupSim()
 #env = PendulumPyB()
 
 #Check convergence
-up_reach = False
+
+c = 100000000
+
+
 h_sum_last =0
+
+
+
 angles_list=[]
 angles_list.append(angle_normalize(robot.states[1][3])*180/np.pi)
 vel_ang_list = []
 vel_ang_list.append(robot.states_dot[1][3])
+action_list = []
+
+
+up_reach = False
+j=0
+max_after_up = 0
+
 for i in range(NSTEPS):
     
     x = np.array([[robot.states_sincos[1][0],robot.states_sincos[1][1],robot.states_dot[1][3]]])    
     action =sess.run(policy.policy, feed_dict={ policy.x: x }) 
     action=action.tolist()
     robot.simulateDyn(action[0])
+    action_list.append(action)
     
-         
+    
     if angle_normalize(robot.states[1][3]) < 1*np.pi/180 and up_reach == False:
-         first_step_up = i
-         up_reach = True
+            first_step_up_1 = i
+            up_reach = True
          
-    if i >= NSTEPS -1:
+    if angle_normalize(robot.states[1][3])**2<c:  
+        c = angle_normalize(robot.states[1][3])**2 
+        step_max = i
+         
+    if up_reach == True:
+        j+=1
         h_sum_last+= -angle_normalize(robot.states[1][3])**2
+       
+            
+    if i >= NSTEPS-50:
+        if  angle_normalize(robot.states[1][3])*180/np.pi > max_after_up:
+            max_after_up = angle_normalize(robot.states[1][3])*180/np.pi
+        
         
     angles_list.append(angle_normalize(robot.states[1][3])*180/np.pi)
     vel_ang_list.append(robot.states_dot[1][3])
     
-h_mean_last = h_sum_last/NSTEPS
-print("mean return 20 last steps: "+str(h_mean_last)+", first reached top at "+str(first_step_up))
+h_mean_last = h_sum_last/j
+print("up position reached at step"+str(first_step_up_1)+",mean reward last steps after up reached: "+str(h_mean_last)+", angle is lower than "+str(max_after_up)+"in the last 50 steps")
 
 robot.stopSim()  
 
@@ -209,18 +242,36 @@ robot.stopSim()
 
 #valuta policy con (10x)random reset 
 #salvare a che step arriva in posizione verticale (anche con random reset)
+
+
+
 robot = Robot("single_pendulum.urdf")
 robot.sim_number=1
 robot.RANDSET =1
 robot.GUI_ENABLED = 1
 robot.SINCOS=1
-path_eval= "/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/continuous/eval/"
+path_eval= "/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/ddpg/eval/"
 robot.setupSim()
-h_sum_last =0
+
+
+up_reach= False
+
+
 h_mean_last_list = []
 first_step_up_list = []
-for j in range (20):
+max_after_up_list = []
+
+
+
+
+for k in range (100):
+    
+    h_sum_last =0
+    firs_step_up = None
+    max_after_up = 0
+    j=0
     up_reach = False
+    
     robot.resetRobot()
     for i in range(NSTEPS):
         
@@ -234,15 +285,31 @@ for j in range (20):
             first_step_up = i
             up_reach = True
             
-        if i >= NSTEPS -1:
+        if i >= NSTEPS -50:
+            if  angle_normalize(robot.states[1][3])*180/np.pi > max_after_up:
+                max_after_up = angle_normalize(robot.states[1][3])*180/np.pi
+           
+        if up_reach == True:   
+            
+            j+=1
             h_sum_last+= -angle_normalize(robot.states[1][3])**2
 
-    h_mean_last_list.append(h_sum_last/NSTEPS)
+    h_mean_last_list.append(h_sum_last/j)
     first_step_up_list.append(first_step_up)
-    first_step_up = 10000
-    print(j)
+    max_after_up_list.append(max_after_up)
     
-print(" (RANDSET) mean return 20 last episodes: "+str(sum(h_mean_last_list)/len(h_mean_last_list))+", first reached top at "+str(sum(first_step_up_list)/len(first_step_up_list)))
+    
+    
+mean_h_mean_last = st.mean(h_mean_last_list)
+std_mean_h_mean_last= st.stdev(h_mean_last_list)
+
+mean_first_step_up_list =  st.mean(first_step_up_list)
+std_first_step_up_list = st.stdev(first_step_up_list)
+
+mean_max_after_up_list = st.mean(max_after_up_list)
+std_max_after_up_list= st.stdev(max_after_up_list)
+    
+print(" (RANDSET) mean 100 last episodes: up step "+str(mean_first_step_up_list)+"+-" +str(std_first_step_up_list)+",return afer "+str(mean_h_mean_last)+"+-" +str(std_mean_h_mean_last)+" ,max angle"+str(mean_max_after_up_list)+"+-" +str(std_max_after_up_list))
 
 robot.stopSim()
 
@@ -250,10 +317,10 @@ robot.stopSim()
 
 
 f=open(path_eval + 'results_baselines.txt', 'w')
-f.write("mean return 20 last steps: "+str(h_mean_last)+", max reward reached is "+str(-c)+ " in step number "+str(step_max)
-        +"\n (RANDSET) mean return 20 last episodes: "+str(sum(h_mean_last_list)/len(h_mean_last_list))+", first reached top at "+str(sum(first_step_up_list)/len(first_step_up_list)))
+f.write("up position reached at step"+str(first_step_up_1)+",mean reward last steps after up reached: "+str(h_mean_last)+", angle is lower than "+str(max_after_up)+"in the last 50 steps"
+        +"\n (RANDSET) mean 100 last episodes: up step "+str(mean_first_step_up_list)+"+-" +str(std_first_step_up_list)+",return afer "+str(mean_h_mean_last)+"+-" +str(std_mean_h_mean_last)+" ,max angle"+str(mean_max_after_up_list)+"+-" +str(std_max_after_up_list))
 #            
 f.close() 
 
-pd.DataFrame([np.array(angles_list),np.array(vel_ang_list)]).T.to_csv(path_eval + 'angles_and_vel_seq.csv')
-#(RANDSET) mean return 20 last episodes: -4.1383060313359755e-05, first reached top at 17.2
+action_sav = np.array(action_list).T[0][0].tolist()
+pd.DataFrame([angles_list,vel_ang_list,action_sav]).T.to_csv(path_eval + 'ang_vel_act_seq.csv')

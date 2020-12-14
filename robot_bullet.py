@@ -19,7 +19,7 @@ class Robot:
         self.SINCOS = 0
         self.RANDSET =0
         
-        self.video_path = "/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/continuous/Video"
+        self.video_path = "/home/pasquale/Desktop/thesis/thesis-code/"
         
         
         self.client_id = 0
@@ -46,7 +46,7 @@ class Robot:
         
         if self.GUI_ENABLED==1:
             self.client_id =self.physicsClient = p.connect(p.GUI)
-            p.resetDebugVisualizerCamera( cameraDistance=0.8, cameraYaw=80, cameraPitch=-10, cameraTargetPosition=[0,0,0],physicsClientId = self.client_id)
+            p.resetDebugVisualizerCamera( cameraDistance=0.8, cameraYaw=90, cameraPitch=-10, cameraTargetPosition=[0,0,0],physicsClientId = self.client_id)
             if self.LOGDATA==1:
                 self.state_seq = []
                 self.state_dot_seq = []
@@ -184,12 +184,12 @@ if __name__ == "__main__":
 
     pendulum = Robot("single_pendulum.urdf",time_step=0.01)
     
-    #pendulum.LOGDATA=1
+   
     pendulum.setupSim()
     
-    for i in range (100):
-     pendulum.simulateDyn([1.0])
-    
+    # for i in range (100):
+    #  pendulum.simulateDyn([1.0])
+
     pendulum.stopSim
 
 

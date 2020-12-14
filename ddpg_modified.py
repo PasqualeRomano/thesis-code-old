@@ -5,7 +5,7 @@ From "Continuous control with deep reinforcement learning", by Lillicrap et al, 
 
 
 import tensorflow as tf
-import numpy as np
+import numpy as np,math
 from tensorflow import keras
 from tensorflow.keras import layers
 import random
@@ -25,26 +25,30 @@ print("Seed = %d" %  RANDOM_SEED)
 np .random.seed     (RANDOM_SEED)
 tf.compat.v1.set_random_seed(RANDOM_SEED)
 random.seed         (RANDOM_SEED)
-n_init = tf.keras.initializers.TruncatedNormal(seed=RANDOM_SEED)
-u_init = tf.keras.initializers.RandomUniform(minval=-0.3, maxval=0.3, seed=RANDOM_SEED) #check weights #######
+#n_init = tf.keras.initializers.RandomUniform(seed=RANDOM_SEED)
+u_init = tf.keras.initializers.RandomUniform(minval=-3e-3, maxval=3e-3, seed=RANDOM_SEED) #check weights #######
 
 
 NEPISODES               = tc.NEPISODES                  # Max training steps
-NSTEPS                  = tc.NSTEPS                     # Max episode length
+NSTEPS                  = tc.NSTEPS                     # Max episode length 
 QVALUE_LEARNING_RATE    = tc.QVALUE_LEARNING_RATE       # Base learning rate for the Q-value Network
 POLICY_LEARNING_RATE    = tc.POLICY_LEARNING_RATE       # Base learning rate for the policy network
 DECAY_RATE              = tc.DECAY_RATE                 # Discount factor 
 UPDATE_RATE             = tc.UPDATE_RATE                # Homotopy rate to update the networks
 REPLAY_SIZE             = tc.REPLAY_SIZE                # Size of replay buffer
 BATCH_SIZE              = tc.BATCH_SIZE                 # Number of points to be fed in stochastic gradient
-NH1 = NH2               = tc.NH1                        # Hidden layer size
+NH1                     = tc.NH1
+NH2                     = tc.NH2                        # Hidden layer size
+range_esp               = tc.range_esp                    # Hidden layer size
 
 range_esp               = tc.range_esp
 
 reward_weights  = [1.,0.0,0.00]
 
 
-sim_number = 12
+
+
+sim_number = 1.5
 RANDSET =0
 env                 = Robot("single_pendulum.urdf")       
 env_rend            = Robot("single_pendulum.urdf",sim_number=sim_number) #for rendering
@@ -60,6 +64,10 @@ NU                  = 1            # Control is dim-1: joint torque
 def angle_normalize(x):
     return min(x%(2*np.pi),abs(x%(2*np.pi)-2*np.pi))
 
+
+## Build Neural Networks for Actor and Critic ##
+
+
 class QValueNetwork:
     def __init__(self):
         nvars           = len(tf.compat.v1.trainable_variables())
@@ -67,12 +75,15 @@ class QValueNetwork:
         x       =  keras.Input(shape=(NX,),name="State")
         u       =  keras.Input(shape=(NU,),name="Control")
 
-        netx1 = layers.Dense(NH1, activation="relu", kernel_initializer=n_init, name="netx1")(x)
-        netx2 = layers.Dense(NH2, activation="linear", kernel_initializer=n_init, name="netx2")(netx1)
-        netu1 = layers.Dense(NH1, activation="linear", kernel_initializer=n_init, name="netu1")(u)
-        netu2 = layers.Dense(NH2, activation="linear", kernel_initializer=n_init, name="netu2")(netu1)
-        net_act = tf.keras.activations.relu(netx2+netu2)
-        qvalue = layers.Dense(1, activation="linear", kernel_initializer=u_init, name="qvalue")(net_act)
+        netx1 = layers.Dense(NH1, activation="relu", kernel_initializer=tf.keras.initializers.RandomUniform(seed=RANDOM_SEED,minval = -1/math.sqrt(NH1),maxval=1/math.sqrt(NH1)), name="netx1")(x)
+        net_u = tf.keras.layers.Concatenate(axis=-1)([netx1, u])
+        netx2 = layers.Dense(NH2, activation="relu", kernel_initializer=tf.keras.initializers.RandomUniform(seed=RANDOM_SEED,minval = -1/math.sqrt(NH2),maxval=1/math.sqrt(NH2)), name="netx2")(net_u)
+        
+        #netu1 = layers.Dense(NH1, activation="linear", kernel_initializer=n_init, name="netu1")(u)
+        #netu2 = layers.Dense(NH2, activation="linear", kernel_initializer=n_init, name="netu2")(netu1)
+        #net_act = tf.keras.activations.relu(netx2+netu2)
+        
+        qvalue = layers.Dense(1, activation="linear", kernel_initializer=u_init, name="qvalue")(netx2)
         
         qvalue_model = keras.Model(
             inputs=[x,u],
@@ -83,7 +94,7 @@ class QValueNetwork:
         self.u          = u                                # Network control <u> input in Q(x,u)
         self.qvalue     = qvalue                           # Network output  <Q>
         self.variables  = tf.compat.v1.trainable_variables()[nvars:] # Variables to be trained
-        self.hidens = [ netx1, netx2, netu1, netu2 ]                  # Hidden layers for debug
+        self.hidens = [ netx1, netx2 ]                  # Hidden layers for debug
         self.model = qvalue_model
 
     def setupOptim(self):
@@ -109,8 +120,8 @@ class PolicyNetwork:
         
         x = keras.Input(shape=(NX,),name="State")
         # Define Sequential model with 3 layers
-        net = layers.Dense(NH1, activation="relu", kernel_initializer=n_init, name="net")(x)
-        net = layers.Dense(NH2, activation="relu", kernel_initializer=n_init, name="net2")(net)
+        net = layers.Dense(NH1, activation="relu", kernel_initializer=tf.keras.initializers.RandomUniform(seed=RANDOM_SEED,minval = -1/math.sqrt(NH1),maxval=1/math.sqrt(NH1)), name="net")(x)
+        net = layers.Dense(NH2, activation="relu", kernel_initializer=tf.keras.initializers.RandomUniform(seed=RANDOM_SEED,minval = -1/math.sqrt(NH2),maxval=1/math.sqrt(NH2)), name="net2")(net)
         policy = layers.Dense(NU, activation="tanh", kernel_initializer=u_init, name="netu1")(net)*2. #2nm max torque
 
         policy_model = keras.Model(
@@ -162,7 +173,7 @@ if __name__ == "__main__":
     qvalueTarget    = QValueNetwork(). setupTargetAssign(qvalue)
     
     
-    model_save = 'DDPG_continuous_saved.chkpt'
+    model_save = 'DDPG_saved.chkpt'
     
     sess            = tf.compat.v1.InteractiveSession()
     tf.compat.v1.global_variables_initializer().run()
@@ -172,7 +183,8 @@ if __name__ == "__main__":
     # env_rend.GUI_ENABLED = 1
     # env_rend.setupSim() 
 
-
+    ##  Function for rendering trial    ##
+    
     def rendertrial(maxiter=NSTEPS,verbose=True):
     
         env_rend.resetRobot()
@@ -186,7 +198,7 @@ if __name__ == "__main__":
                        env_rend.states_dot[1][3]]])
             reward =  -(angle_normalize(env_rend.states[1][3]))**2*reward_weights[0]-env_rend.states_dot[1][3]**2*reward_weights[1] - reward_weights[2] * (u[0][0] ** 2)
             #print(reward)
-            time.sleep(1e-2)
+            time.sleep(1e-1)
             rsum += reward
             #print(rsum)
         print(x)
@@ -199,9 +211,16 @@ if __name__ == "__main__":
     h_qva = []
     h_ste = []    
  
+ 
+    ##  Envirnonment Configuration ##
     env.GUI_ENABLED=0 
     env.SINCOS = 1
+    env.time_step=.01
     env.setupSim() 
+    
+    
+    
+    ##  Training Loop ##
     start_time = time.time()
     for episode in range(1,NEPISODES):
         env.resetRobot()
@@ -266,7 +285,7 @@ if __name__ == "__main__":
     
 
     
-    #Display and logging (not mandatory).
+    ## Display and logging (not mandatory).
         maxq = np.max( sess.run(qvalue.qvalue,feed_dict={ qvalue.x : x_batch,
                                                           qvalue.u : u_batch }) ) \
                                                           if 'x_batch' in locals() else 0
@@ -288,16 +307,22 @@ if __name__ == "__main__":
     env_rend.SINCOS = 1
     env_rend.GUI_ENABLED = 1
     env_rend.setupSim()
+    env_rend.video_path = "/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/ddpg/Video"
     env_rend.LOGDATA=1   ####@@@@@@@@@@@@@@@@############@@@@@@@@@@@@@@@@@@@@#############@@@@@@@@
     rendertrial()
     env_rend.stopSim()
 
 
-    f=open('/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/continuous/hrwd{}.txt'.format(sim_number), 'w')
+
+    ##   SAVE DATA  ##
+    filepath = '/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/ddpg/'
+    
+
+    f=open(filepath + 'hrwd{}.txt'.format(sim_number), 'w')
     f.write(json.dumps(h_rwd))
     f.close()
 
-    f=open('/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/continuous/' + 'continuous_config{}.txt'.format(sim_number), 'w')
+    f=open(filepath + 'config{}.txt'.format(sim_number), 'w')
     f.write("NEPISODES = "+str(NEPISODES)+"\nNSTEPS = "+str(NSTEPS)+"\nQVALUE_LEARNING_RATE = "+str(QVALUE_LEARNING_RATE)+"\nPOLICY_LEARNING_RATE = "+str(POLICY_LEARNING_RATE)+"\nDECAY_RATE = "+str(DECAY_RATE)+"\nUPDATE_RATE = "+str(UPDATE_RATE)+"\nREPLAY_SIZE"+str(REPLAY_SIZE)+"\nBATCH_SIZE"+str(BATCH_SIZE)+"\nNH1 = "+str(NH1)+"\nNH2 = "+str(NH2) + "\nreward weights = "+str(0)
            +"\nRANDOM RESET = "+str(RANDSET)+"\nstep_expl = "+ str(0)+"\nepi_expl = "+ str(0)+"\nrange_esp = "+ str(range_esp)+"\nElapsed time = "+str(elapsed_time)+"\nMean reward (20 eps) = "+str(0)+"\nStd reward = "+str(0))
     f.close() 
@@ -310,14 +335,13 @@ if __name__ == "__main__":
 #salvare a che step arriva in posizione verticale (anche con random reset)
 
 
-    os.system('spd-say "your program has finished you motherfucker"')
+    #os.system('spd-say "your program has finished you motherfucker"')
     
     plt.plot( np.cumsum(h_rwd)/list(range(1,NEPISODES)))
     plt.grid(True)
     #plt.show()
-    plt.savefig('/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/continuous/reward{}.png'.format(sim_number))
+    plt.savefig(filepath + 'reward{}.png'.format(sim_number))
     
 
     tf_saver.save(sess, model_save)
-
 
