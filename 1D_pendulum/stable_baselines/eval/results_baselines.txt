@@ -1,2 +1,2 @@
-up position reached at step25,mean reward last steps after up reached: -0.00024342501439239463, angle is lower than 1.2613260017711612in the last 50 steps
- (RANDSET) mean 100 last episodes: up step 20.68+-9.450434226569014,return afer -0.00029242601057868683+-1.1678402238695215e-05 ,max angle1.2613256548467149+-9.274797010176447e-07
+up position reached at step58,mean reward last steps after up reached: -0.0005994843904106277, angle is lower than 3.7797228863303722in the last 50 steps
+ (RANDSET) mean 100 last episodes: up step 35.33+-12.809446482651746,return afer -0.0005708180958450128+-3.6944918510428647e-06 ,max angle3.4555861785703037+-0.33378573898235875

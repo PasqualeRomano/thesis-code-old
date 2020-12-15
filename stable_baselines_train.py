@@ -67,7 +67,7 @@ env.robot.stopSim()
 # model = DDPG.load("ddpg_pendulum_stb_baselines")
 
 robot = Robot("single_pendulum.urdf")
-robot.sim_number=1.1
+robot.sim_number=1.2
 RANDSET =0
 robot.LOGDATA = 1
 robot.SINCOS=1
@@ -102,4 +102,4 @@ f.close()
 #salvare a che step arriva in posizione verticale (anche con random reset)
 
 
-os.system('spd-say "your program has finished you motherfucker"')
+#os.system('spd-say "your program has finished you motherfucker"')

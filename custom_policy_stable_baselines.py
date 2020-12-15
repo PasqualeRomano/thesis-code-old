@@ -273,7 +273,7 @@ class FeedForwardInit(DDPGPolicy):
 
     def __init__(self, sess, ob_space, ac_space, n_env, n_steps, n_batch, reuse=False, layers=None,
                  cnn_extractor=nature_cnn, feature_extraction="cnn",
-                 layer_norm=False, act_fun=tf.nn.tanh, **kwargs):
+                 layer_norm=False, act_fun=tf.nn.relu, **kwargs):
         super(FeedForwardInit, self).__init__(sess, ob_space, ac_space, n_env, n_steps, n_batch, reuse=reuse,
                                                 scale=(feature_extraction == "cnn"))
 
