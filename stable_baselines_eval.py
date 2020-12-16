@@ -29,8 +29,9 @@ REPLAY_SIZE             = tc.REPLAY_SIZE                # Size of replay buffer
 BATCH_SIZE              = tc.BATCH_SIZE                 # Number of points to be fed in stochastic gradient
 NH1 = NH2               = tc.NH1                        # Hidden layer size
 range_esp               = tc.range_esp
+time_step               = tc.time_step
 
-model = DDPG.load("ddpg_pendulum_stb_baselines")
+model = DDPG.load("ddpg_pendulum_stb_baselines_1.8")
 
 robot = Robot("single_pendulum.urdf")
 robot.sim_number=1
@@ -38,6 +39,7 @@ robot.RANDSET =0
 robot.GUI_ENABLED = 1
 robot.SINCOS=1
 path_log= "/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/stable_baselines/"
+robot.time_step = time_step
 robot.setupSim()
 
 #Evaluate policy 
@@ -115,6 +117,7 @@ robot.RANDSET =1
 robot.GUI_ENABLED = 1
 robot.SINCOS=1
 path_eval= "/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/stable_baselines/eval/"
+robot.time_step = time_step
 robot.setupSim()
 
 

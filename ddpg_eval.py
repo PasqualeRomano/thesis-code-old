@@ -35,8 +35,7 @@ BATCH_SIZE              = tc.BATCH_SIZE                 # Number of points to be
 NH1                     = tc.NH1
 NH2                     = tc.NH2                        # Hidden layer size
 range_esp               = tc.range_esp
-
-range_esp               = tc.range_esp
+time_step               = tc.time_step
 
 reward_weights  = [1.,0.0,0.00]
 
@@ -161,8 +160,8 @@ policyTarget    = PolicyNetwork(). setupTargetAssign(policy)
 qvalue          = QValueNetwork(). setupOptim()
 qvalueTarget    = QValueNetwork(). setupTargetAssign(qvalue)
     
-    
-model_save = 'DDPG_saved.chkpt'
+SIM_NUMBER = 1.1    
+model_save = "DDPG_saved_"+str(SIM_NUMBER)+".chkpt"
 
 
 sess            = tf.compat.v1.InteractiveSession()
@@ -172,11 +171,12 @@ tf.compat.v1.train.Saver().restore(sess,model_save)
 
 
 robot = Robot("single_pendulum.urdf")
-robot.sim_number=1
+robot.sim_number=SIM_NUMBER
 robot.RANDSET =0
 robot.GUI_ENABLED = 0
 robot.SINCOS=1
 path_log= "/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/continuous/"
+robot.time_step =time_step
 robot.setupSim()
 
 #Evaluate policy 
@@ -251,6 +251,7 @@ robot.RANDSET =1
 robot.GUI_ENABLED = 1
 robot.SINCOS=1
 path_eval= "/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/ddpg/eval/"
+robot.time_step=time_step
 robot.setupSim()
 
 

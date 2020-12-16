@@ -305,9 +305,9 @@ class FeedForwardInit(DDPGPolicy):
             else:
                 pi_h = tf.layers.flatten(obs)
             for i, layer_size in enumerate(self.layers):
-                pi_h = tf.layers.dense(pi_h, layer_size, name='fc' + str(i))
+                pi_h = tf.layers.dense(pi_h, layer_size, name='fc' + str(i),kernel_initializer=tf.random_uniform_initializer(minval=-1/math.sqrt(self.fan_in[i]),maxval=1/math.sqrt(self.fan_in[i])))
                 if self.layer_norm:
-                    pi_h = tf.contrib.layers.layer_norm(pi_h, center=True, scale=True)
+                    pi_h = tf.contrib.layers.layer_norm(pi_h, center=True, scale=True,)
                 pi_h = self.activ(pi_h)
             self.policy = tf.nn.tanh(tf.layers.dense(pi_h, self.ac_space.shape[0], name=scope,
                                                      kernel_initializer=tf.random_uniform_initializer(minval=-3e-3,

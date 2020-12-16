@@ -13,7 +13,7 @@ BATCH_SIZE              = 64            # Number of points to be fed in stochast
 NH1                     = 400           # First hidden layer size     
 NH2                     = 300           # Second hidden layer size
 range_esp = 2.
-
+time_step = 0.005
 
 
 

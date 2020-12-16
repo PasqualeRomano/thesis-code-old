@@ -47,7 +47,7 @@ ax2.plot(vel_seq_myddpg,'r.')
 ax2.set_ylabel('angular velocity [rad/s]')
 ax2.set_xlabel('step')
 ax2.grid(color='k', linestyle='-', linewidth=.25)
-#plt.savefig('/home/pasquale/Desktop/thesis/thesis-code/plots/plot_ddpg_my_1Dp.eps', format='eps')
+plt.savefig('/home/pasquale/Desktop/thesis/thesis-code/plots/plot_ddpg_my_1Dp.eps', format='eps')
 
 
 f, (ax1, ax2) = plt.subplots(2, 1,sharex=True)
@@ -61,8 +61,8 @@ ax2.plot(vel_seq_stbsddpg,'r.')
 ax2.set_ylabel('angular velocity [rad/s]')
 ax2.set_xlabel('step')
 ax2.grid(color='k', linestyle='-', linewidth=.25)
-#plt.savefig('/home/pasquale/Desktop/thesis/thesis-code/plots/plot_ddpg_stbs_1Dp.eps', format='eps')
-#plt.show()
+plt.savefig('/home/pasquale/Desktop/thesis/thesis-code/plots/plot_ddpg_stbs_1Dp.eps', format='eps')
+plt.show()
 
 
 f, (ax) = plt.subplots(1,1)

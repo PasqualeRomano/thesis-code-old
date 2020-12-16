@@ -26,7 +26,9 @@ BATCH_SIZE              = tc.BATCH_SIZE                 # Number of points to be
 NH1                     = tc.NH1
 NH2                     = tc.NH2                        # Hidden layer size
 range_esp               = tc.range_esp
+time_step               = tc.time_step
 
+SIM_NUMBER = 1.2
 ##Training policies
 #CustomPolicy_3 
 #CustomPolicy_2  Standard mlp stable baselines policy with modified layer-size
@@ -53,7 +55,7 @@ start_time = time.time()
 model.learn(total_timesteps=NSTEPS*NEPISODES)
 end_time=time.time()
 elapsed_time = end_time-start_time
-model.save("ddpg_pendulum_stb_baselines")
+model.save("ddpg_pendulum_stb_baselines_"+str(SIM_NUMBER))
 print('elapsed '+str(elapsed_time)+'s')
 mean_reward,std_reward = evaluate_policy(model,env,n_eval_episodes = 21)
 env.robot.stopSim()
@@ -67,12 +69,13 @@ env.robot.stopSim()
 # model = DDPG.load("ddpg_pendulum_stb_baselines")
 
 robot = Robot("single_pendulum.urdf")
-robot.sim_number=1.2
+robot.sim_number=SIM_NUMBER
 RANDSET =0
 robot.LOGDATA = 1
 robot.SINCOS=1
 robot.video_path = "/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/stable_baselines/Video"
 path_log= "/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/stable_baselines/"
+robot.time_step = time_step
 robot.setupSim()
 for i in range(NSTEPS):
         
@@ -102,4 +105,4 @@ f.close()
 #salvare a che step arriva in posizione verticale (anche con random reset)
 
 
-#os.system('spd-say "your program has finished you motherfucker"')
+os.system('spd-say "your program has finished you motherfucker"')

@@ -40,20 +40,23 @@ BATCH_SIZE              = tc.BATCH_SIZE                 # Number of points to be
 NH1                     = tc.NH1
 NH2                     = tc.NH2                        # Hidden layer size
 range_esp               = tc.range_esp                    # Hidden layer size
-
-range_esp               = tc.range_esp
+time_step               = tc.time_step
 
 reward_weights  = [1.,0.0,0.00]
 
 
 
 
-sim_number = 1.5
+SIM_NUMBER = 1.4
 RANDSET =0
 env                 = Robot("single_pendulum.urdf")       
-env_rend            = Robot("single_pendulum.urdf",sim_number=sim_number) #for rendering
+env_rend            = Robot("single_pendulum.urdf",sim_number=SIM_NUMBER) #for rendering
 
-env.RANDSET = 0
+
+
+
+
+
 
 step_expl = 0.
 epi_expl = 0.
@@ -173,7 +176,7 @@ if __name__ == "__main__":
     qvalueTarget    = QValueNetwork(). setupTargetAssign(qvalue)
     
     
-    model_save = 'DDPG_saved.chkpt'
+    model_save = "DDPG_saved_"+str(SIM_NUMBER)+".chkpt"
     
     sess            = tf.compat.v1.InteractiveSession()
     tf.compat.v1.global_variables_initializer().run()
@@ -214,8 +217,9 @@ if __name__ == "__main__":
  
     ##  Envirnonment Configuration ##
     env.GUI_ENABLED=0 
+    env.RANDSET = RANDSET
     env.SINCOS = 1
-    env.time_step=.01
+    env.time_step= time_step
     env.setupSim() 
     
     
@@ -306,6 +310,7 @@ if __name__ == "__main__":
 
     env_rend.SINCOS = 1
     env_rend.GUI_ENABLED = 1
+    env_rend.time_step = time_step
     env_rend.setupSim()
     env_rend.video_path = "/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/ddpg/Video"
     env_rend.LOGDATA=1   ####@@@@@@@@@@@@@@@@############@@@@@@@@@@@@@@@@@@@@#############@@@@@@@@
@@ -318,11 +323,11 @@ if __name__ == "__main__":
     filepath = '/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/ddpg/'
     
 
-    f=open(filepath + 'hrwd{}.txt'.format(sim_number), 'w')
+    f=open(filepath + 'hrwd{}.txt'.format(SIM_NUMBER), 'w')
     f.write(json.dumps(h_rwd))
     f.close()
 
-    f=open(filepath + 'config{}.txt'.format(sim_number), 'w')
+    f=open(filepath + 'config{}.txt'.format(SIM_NUMBER), 'w')
     f.write("NEPISODES = "+str(NEPISODES)+"\nNSTEPS = "+str(NSTEPS)+"\nQVALUE_LEARNING_RATE = "+str(QVALUE_LEARNING_RATE)+"\nPOLICY_LEARNING_RATE = "+str(POLICY_LEARNING_RATE)+"\nDECAY_RATE = "+str(DECAY_RATE)+"\nUPDATE_RATE = "+str(UPDATE_RATE)+"\nREPLAY_SIZE"+str(REPLAY_SIZE)+"\nBATCH_SIZE"+str(BATCH_SIZE)+"\nNH1 = "+str(NH1)+"\nNH2 = "+str(NH2) + "\nreward weights = "+str(0)
            +"\nRANDOM RESET = "+str(RANDSET)+"\nstep_expl = "+ str(0)+"\nepi_expl = "+ str(0)+"\nrange_esp = "+ str(range_esp)+"\nElapsed time = "+str(elapsed_time)+"\nMean reward (20 eps) = "+str(0)+"\nStd reward = "+str(0))
     f.close() 
@@ -335,12 +340,12 @@ if __name__ == "__main__":
 #salvare a che step arriva in posizione verticale (anche con random reset)
 
 
-    #os.system('spd-say "your program has finished you motherfucker"')
+    os.system('spd-say "your program has finished you motherfucker, Erik go fuck yourself"')
     
     plt.plot( np.cumsum(h_rwd)/list(range(1,NEPISODES)))
     plt.grid(True)
     #plt.show()
-    plt.savefig(filepath + 'reward{}.png'.format(sim_number))
+    plt.savefig(filepath + 'reward{}.png'.format(SIM_NUMBER))
     
 
     tf_saver.save(sess, model_save)
