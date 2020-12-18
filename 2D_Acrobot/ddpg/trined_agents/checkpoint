@@ -1,0 +1,2 @@
+model_checkpoint_path: "/home/pasquale/Desktop/thesis/thesis-code/2D_Acrobot/ddpg/trined_agents/DDPG_saved_0.chkpt"
+all_model_checkpoint_paths: "/home/pasquale/Desktop/thesis/thesis-code/2D_Acrobot/ddpg/trined_agents/DDPG_saved_0.chkpt"

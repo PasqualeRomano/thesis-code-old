@@ -92,7 +92,7 @@ class Robot:
         
             for i in range(len(self.observed_index)):
                
-                self.states.append(ss_tmp[i][1]+ p.getEulerFromQuaternion(ss_tmp[i][2]))  ##[  [pos,pos,pos,ang,ang,ang] , [pos,pos,pos,ang,ang,ang] , ... ,for each Link]
+                self.states.append(ss_tmp[i][0]+ p.getEulerFromQuaternion(ss_tmp[i][1]))  ##[  [pos,pos,pos,ang,ang,ang] , [pos,pos,pos,ang,ang,ang] , ... ,for each Link]
                                                                                             #for position and orientation it considers the INERTIAL reference frame (NOT JOINT)
                 if self.SINCOS==1:
                     self.states_sincos.append((np.sin(self.states[i][3]),np.cos(self.states[i][3]), # [    [sin,cos,sin,cos,sin,cos]   ,..., for each Link]

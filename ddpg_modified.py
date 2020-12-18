@@ -42,6 +42,9 @@ NH2                     = tc.NH2                        # Hidden layer size
 range_esp               = tc.range_esp                    # Hidden layer size
 time_step               = tc.time_step
 
+
+SIM_NUMBER = 0
+
 reward_weights  = [1.,0.0,0.00]
 
 
@@ -63,7 +66,7 @@ goal = np.array([0,0,length])
 
 
 
-SIM_NUMBER = 1.1
+
 
 env                 = Robot("double_pendulum.urdf")       
 env_rend            = Robot("double_pendulum.urdf",sim_number=SIM_NUMBER) #for rendering
@@ -74,6 +77,7 @@ env.RANDSET = 0
 env.SINCOS = 1
 env.time_step= time_step
 env.actuated_index =[2]
+env.max_torque=5.0
 
 env_rend.SINCOS = 1
 env_rend.GUI_ENABLED = 1
@@ -151,7 +155,7 @@ class PolicyNetwork:
         # Define Sequential model with 3 layers
         net = layers.Dense(NH1, activation="relu", kernel_initializer=tf.keras.initializers.RandomUniform(seed=RANDOM_SEED,minval = -1/math.sqrt(NH1),maxval=1/math.sqrt(NH1)), name="net")(x)
         net = layers.Dense(NH2, activation="relu", kernel_initializer=tf.keras.initializers.RandomUniform(seed=RANDOM_SEED,minval = -1/math.sqrt(NH2),maxval=1/math.sqrt(NH2)), name="net2")(net)
-        policy = layers.Dense(NU, activation="tanh", kernel_initializer=u_init, name="netu1")(net)*2. #2nm max torque
+        policy = layers.Dense(NU, activation="tanh", kernel_initializer=u_init, name="netu1")(net)*env.max_torque #2nm max torque
 
         policy_model = keras.Model(
             inputs=[x],
@@ -202,7 +206,7 @@ if __name__ == "__main__":
     qvalueTarget    = QValueNetwork(). setupTargetAssign(qvalue)
     
     
-    model_save = "DDPG_saved_"+str(SIM_NUMBER)+".chkpt"
+    model_save = "/home/pasquale/Desktop/thesis/thesis-code/2D_Acrobot/ddpg/trined_agents/DDPG_saved_"+str(SIM_NUMBER)+".chkpt"
     
     sess            = tf.compat.v1.InteractiveSession()
     tf.compat.v1.global_variables_initializer().run()
@@ -216,7 +220,7 @@ if __name__ == "__main__":
     
     def rendertrial(env,maxiter=NSTEPS,verbose=True):
         
-        unittest.assertIsInstance(env,Robot)
+        
         
         env.resetRobot()
         x = np.array([[env.states_sincos[1][0],env.states_sincos[1][1],env.states_dot[1][3],
@@ -225,9 +229,9 @@ if __name__ == "__main__":
         for i in range(maxiter):
             u = sess.run(policy.policy, feed_dict={ policy.x: x }) 
             env_rend.simulateDyn([u[0][0]])
-            x=np.array([[env.states_sincos[1][0],env.states_sincos[1][1],
-                       env.states_dot[1][3]]])
-            reward =  -np.linalg(goal-np.array([env.states[0][1],env.states[1][1],env.states[2][1]])) 
+            x = np.array([[env.states_sincos[1][0],env.states_sincos[1][1],env.states_dot[1][3],
+                           env.states_sincos[2][0],env.states_sincos[2][1],env.states_dot[2][3]]])
+            reward =  -np.linalg.norm(goal-np.array([env.states[2][0],env.states[2][1],env.states[2][2]])) 
             #print(reward)
             time.sleep(1e-1)
             rsum += reward
@@ -253,8 +257,8 @@ if __name__ == "__main__":
     start_time = time.time()
     for episode in range(1,NEPISODES):
         env.resetRobot()
-        x    = np.array([[env.states_sincos[1][0],env.states_sincos[1][1],
-                       env.states_dot[1][3]]])  #remove .T
+        x = np.array([[env.states_sincos[1][0],env.states_sincos[1][1],env.states_dot[1][3],
+                       env.states_sincos[2][0],env.states_sincos[2][1],env.states_dot[2][3]]])
         
         rsum = 0.0 
  
@@ -265,10 +269,10 @@ if __name__ == "__main__":
             
             #print(u[0][0])
             env.simulateDyn([u[0][0]])
-            x2 = np.array([env.states_sincos[1][0],env.states_sincos[1][1],
-                       env.states_dot[1][3]])   
+            x2 = np.array([env.states_sincos[1][0],env.states_sincos[1][1],env.states_dot[1][3],
+                            env.states_sincos[2][0],env.states_sincos[2][1],env.states_dot[2][3]])   
             #print(x2)
-            r = -np.linalg(goal-np.array([env.states[0][1],env.states[1][1],env.states[2][1]])) 
+            r = -np.linalg.norm(goal-np.array([env.states[2][0],env.states[2][1],env.states[2][2]])) 
             done    = False                                              # pendulum scenario is endless.
             #print(r)
             replayDeque.append(ReplayItem(x,u,r,done,x2))                # Feed replay memory ...
@@ -323,7 +327,8 @@ if __name__ == "__main__":
         h_rwd.append(rsum) 
         h_qva.append(maxq)
         h_ste.append(step)
-        # if not (episode+1) % 15:     rendertrial()
+        # env_rend.setupSIm()
+        # if not (episode+1) % 15:     rendertrial(env_rend)
 
     # \\\END_FOR episode in range(NEPISODES)
     end_time=time.time()
@@ -339,7 +344,7 @@ if __name__ == "__main__":
     env_rend.setupSim()
     env_rend.video_path = "/home/pasquale/Desktop/thesis/thesis-code/2D_Acrobot/ddpg/Video"
     env_rend.LOGDATA=1   ####@@@@@@@@@@@@@@@@############@@@@@@@@@@@@@@@@@@@@#############@@@@@@@@
-    rendertrial()
+    rendertrial(env_rend)
     env_rend.stopSim()
 
 
@@ -357,7 +362,7 @@ if __name__ == "__main__":
 
     f=open(filepath + 'config{}.txt'.format(SIM_NUMBER), 'w')
     f.write("NEPISODES = "+str(NEPISODES)+"\nNSTEPS = "+str(NSTEPS)+"\nQVALUE_LEARNING_RATE = "+str(QVALUE_LEARNING_RATE)+"\nPOLICY_LEARNING_RATE = "+str(POLICY_LEARNING_RATE)+"\nDECAY_RATE = "+str(DECAY_RATE)+"\nUPDATE_RATE = "+str(UPDATE_RATE)+"\nREPLAY_SIZE"+str(REPLAY_SIZE)+"\nBATCH_SIZE"+str(BATCH_SIZE)+"\nNH1 = "+str(NH1)+"\nNH2 = "+str(NH2) + "\nreward weights = "+str(0)
-           +"\nRANDOM RESET = "+str(RANDSET)+"\nstep_expl = "+ str(0)+"\nepi_expl = "+ str(0)+"\nrange_esp = "+ str(range_esp)+"\nElapsed time = "+str(elapsed_time)+"\nMean reward (20 eps) = "+str(0)+"\nStd reward = "+str(0))
+           +"\nRANDOM RESET = "+str(env.RANDSET)+"\nstep_expl = "+ str(0)+"\nepi_expl = "+ str(0)+"\nrange_esp = "+ str(range_esp)+"\nElapsed time = "+str(elapsed_time)+"\nMean reward (20 eps) = "+str(0)+"\nStd reward = "+str(0))
     f.close() 
 
 #confronta 

@@ -7,13 +7,13 @@ from custom_policy_stable_baselines import CustomPolicy_2,CustomPolicy_4
 from stable_baselines.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise, AdaptiveParamNoiseSpec
 from stable_baselines.common.evaluation import evaluate_policy
 from stable_baselines import DDPG
-from custom_env_stable_baselines import PendulumPyB
+from custom_env_stable_baselines import AcrobotPyB
 import training_config as tc
 import os
 
 
 
-env = PendulumPyB()
+env = AcrobotPyB()
 
 NEPISODES               = tc.NEPISODES                  # Max training steps
 NSTEPS                  = tc.NSTEPS                     # Max episode length 
@@ -28,7 +28,8 @@ NH2                     = tc.NH2                        # Hidden layer size
 range_esp               = tc.range_esp
 time_step               = tc.time_step
 
-SIM_NUMBER = 999 
+SIM_NUMBER = 0
+ 
 ##Training policies
 #CustomPolicy_3 
 #CustomPolicy_2  Standard mlp stable baselines policy with modified layer-size
@@ -69,18 +70,19 @@ env.robot.stopSim()
 ### save video
 # model = DDPG.load("ddpg_pendulum_stb_baselines")
 
-robot = Robot("single_pendulum.urdf")
+robot = Robot("double_pendulum.urdf")
 robot.sim_number=SIM_NUMBER
 RANDSET =0
 robot.LOGDATA = 1
 robot.SINCOS=1
-robot.video_path = "/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/stable_baselines/Video"
-path_log= "/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/stable_baselines/"
+robot.video_path = "/home/pasquale/Desktop/thesis/thesis-code/2D_Acrobot/stable_baselines/Video"
+path_log= "/home/pasquale/Desktop/thesis/thesis-code/2D_Acrobot/stable_baselines/"
 robot.time_step = time_step
 robot.setupSim()
 for i in range(NSTEPS):
         
-         obs = np.array([robot.states_sincos[1][0],robot.states_sincos[1][1],robot.states_dot[1][3]])
+         obs = np.array([robot.states_sincos[1][0],robot.states_sincos[1][1],robot.states_dot[1][3],
+                         robot.states_sincos[2][0],robot.states_sincos[2][1],robot.states_dot[2][3]])
          action, _states = model.predict(obs)
          action=action.tolist()
          robot.simulateDyn(action)

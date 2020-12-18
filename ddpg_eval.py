@@ -162,7 +162,7 @@ qvalue          = QValueNetwork(). setupOptim()
 qvalueTarget    = QValueNetwork(). setupTargetAssign(qvalue)
     
 SIM_NUMBER = 1.5    
-model_save = "DDPG_saved_"+str(SIM_NUMBER)+".chkpt"
+model_save = "/home/pasquale/Desktop/thesis/thesis-code/2D_Acrobot/ddpg/trined_agents/DDPG_saved_"+str(SIM_NUMBER)+".chkpt"
 
 
 sess            = tf.compat.v1.InteractiveSession()

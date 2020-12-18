@@ -2,8 +2,8 @@
 
 
 
-NEPISODES               = 200           # Max training steps
-NSTEPS                  = 300           # Max episode length
+NEPISODES               = 100           # Max training steps
+NSTEPS                  = 400           # Max episode length
 QVALUE_LEARNING_RATE    = 0.001         # Base learning rate for the Q-value Network
 POLICY_LEARNING_RATE    = 0.0001        # Base learning rate for the policy network
 DECAY_RATE              = 0.99          # Discount factor 
