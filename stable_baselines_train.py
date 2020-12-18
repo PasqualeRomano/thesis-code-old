@@ -28,7 +28,7 @@ NH2                     = tc.NH2                        # Hidden layer size
 range_esp               = tc.range_esp
 time_step               = tc.time_step
 
-SIM_NUMBER = 1.2
+SIM_NUMBER = 999 
 ##Training policies
 #CustomPolicy_3 
 #CustomPolicy_2  Standard mlp stable baselines policy with modified layer-size
@@ -44,9 +44,10 @@ n_actions = env.action_space.shape[-1]
 param_noise = None
 action_noise =  NormalActionNoise(0,range_esp)
 #
-model = DDPG(policy, env, verbose=1,nb_train_steps=NSTEPS, nb_rollout_steps=NSTEPS,nb_eval_steps=NSTEPS,gamma=DECAY_RATE, param_noise=None, action_noise=action_noise,batch_size=BATCH_SIZE,actor_lr=POLICY_LEARNING_RATE,
+# model = DDPG(policy, env, verbose=1,nb_train_steps=NSTEPS, nb_rollout_steps=NSTEPS,nb_eval_steps=NSTEPS,gamma=DECAY_RATE, param_noise=None, action_noise=action_noise,batch_size=BATCH_SIZE,actor_lr=POLICY_LEARNING_RATE,
+#                critic_lr =  QVALUE_LEARNING_RATE,buffer_size=REPLAY_SIZE,tau= UPDATE_RATE)
+model = DDPG(policy, env, verbose=1,nb_train_steps=1, nb_rollout_steps=1,nb_eval_steps=0,gamma=DECAY_RATE, param_noise=None, action_noise=action_noise,batch_size=BATCH_SIZE,actor_lr=POLICY_LEARNING_RATE,
                critic_lr =  QVALUE_LEARNING_RATE,buffer_size=REPLAY_SIZE,tau= UPDATE_RATE)
-
 
 # mean_reward, std_reward = evaluate_policy(model, env_eval, n_eval_episodes=10)
 # print(f'Mean reward: {mean_reward} +/- {std_reward:.2f}')
@@ -105,4 +106,4 @@ f.close()
 #salvare a che step arriva in posizione verticale (anche con random reset)
 
 
-os.system('spd-say "your program has finished you motherfucker"')
+os.system('spd-say "your program has finished"')

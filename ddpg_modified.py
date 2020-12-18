@@ -5,7 +5,7 @@ From "Continuous control with deep reinforcement learning", by Lillicrap et al, 
 
 
 import tensorflow as tf
-import numpy as np,math
+import numpy as np,math,unittest
 from tensorflow import keras
 from tensorflow.keras import layers
 import random
@@ -45,13 +45,39 @@ time_step               = tc.time_step
 reward_weights  = [1.,0.0,0.00]
 
 
+### Definining environment ###
+#
+# Acrobot
+#   fixed joint in [0.,0.,0.]
+#       first revolute [0.0060872, 0., 0.035]
+#           second revolute [0.023,0.,0.1]
+#               center of gravity of link 2 [-0.0050107, 1.9371E-10, 0.10088]
+#
+# since the rotation is on x and all joints RF have the same orientation and also link2 CoG, consider only y and z for the length (actually only z since y is always 0)
+#
+# tip of Acrobot is considered to be in the center of gravity of link2
+# -> goal position 
+
+length = .035 + .01 + 0.1088
+goal = np.array([0,0,length])
 
 
-SIM_NUMBER = 1.4
-RANDSET =0
-env                 = Robot("single_pendulum.urdf")       
-env_rend            = Robot("single_pendulum.urdf",sim_number=SIM_NUMBER) #for rendering
 
+SIM_NUMBER = 1.1
+
+env                 = Robot("double_pendulum.urdf")       
+env_rend            = Robot("double_pendulum.urdf",sim_number=SIM_NUMBER) #for rendering
+
+
+env.GUI_ENABLED=0 
+env.RANDSET = 0
+env.SINCOS = 1
+env.time_step= time_step
+env.actuated_index =[2]
+
+env_rend.SINCOS = 1
+env_rend.GUI_ENABLED = 1
+env_rend.actuated_index = [2]
 
 
 
@@ -61,8 +87,8 @@ env_rend            = Robot("single_pendulum.urdf",sim_number=SIM_NUMBER) #for r
 step_expl = 0.
 epi_expl = 0.
 
-NX                  = 3          # ... training converges with q,qdot with 2x more neurones.
-NU                  = 1            # Control is dim-1: joint torque
+NX                  = 6         
+NU                  = 1          
 
 def angle_normalize(x):
     return min(x%(2*np.pi),abs(x%(2*np.pi)-2*np.pi))
@@ -188,18 +214,20 @@ if __name__ == "__main__":
 
     ##  Function for rendering trial    ##
     
-    def rendertrial(maxiter=NSTEPS,verbose=True):
-    
-        env_rend.resetRobot()
-        x = np.array([[env_rend.states_sincos[1][0],env_rend.states_sincos[1][1],
-                   env_rend.states_dot[1][3]]])
+    def rendertrial(env,maxiter=NSTEPS,verbose=True):
+        
+        unittest.assertIsInstance(env,Robot)
+        
+        env.resetRobot()
+        x = np.array([[env.states_sincos[1][0],env.states_sincos[1][1],env.states_dot[1][3],
+                       env.states_sincos[2][0],env.states_sincos[2][1],env.states_dot[2][3]]])
         rsum = 0.
         for i in range(maxiter):
             u = sess.run(policy.policy, feed_dict={ policy.x: x }) 
             env_rend.simulateDyn([u[0][0]])
-            x=np.array([[env_rend.states_sincos[1][0],env_rend.states_sincos[1][1],
-                       env_rend.states_dot[1][3]]])
-            reward =  -(angle_normalize(env_rend.states[1][3]))**2*reward_weights[0]-env_rend.states_dot[1][3]**2*reward_weights[1] - reward_weights[2] * (u[0][0] ** 2)
+            x=np.array([[env.states_sincos[1][0],env.states_sincos[1][1],
+                       env.states_dot[1][3]]])
+            reward =  -np.linalg(goal-np.array([env.states[0][1],env.states[1][1],env.states[2][1]])) 
             #print(reward)
             time.sleep(1e-1)
             rsum += reward
@@ -216,10 +244,7 @@ if __name__ == "__main__":
  
  
     ##  Envirnonment Configuration ##
-    env.GUI_ENABLED=0 
-    env.RANDSET = RANDSET
-    env.SINCOS = 1
-    env.time_step= time_step
+    
     env.setupSim() 
     
     
@@ -243,7 +268,7 @@ if __name__ == "__main__":
             x2 = np.array([env.states_sincos[1][0],env.states_sincos[1][1],
                        env.states_dot[1][3]])   
             #print(x2)
-            r = -angle_normalize(env.states[1][3])**2*reward_weights[0]-env.states_dot[1][3]**2*reward_weights[1] - reward_weights[2] * (u[0][0] ** 2)
+            r = -np.linalg(goal-np.array([env.states[0][1],env.states[1][1],env.states[2][1]])) 
             done    = False                                              # pendulum scenario is endless.
             #print(r)
             replayDeque.append(ReplayItem(x,u,r,done,x2))                # Feed replay memory ...
@@ -312,7 +337,7 @@ if __name__ == "__main__":
     env_rend.GUI_ENABLED = 1
     env_rend.time_step = time_step
     env_rend.setupSim()
-    env_rend.video_path = "/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/ddpg/Video"
+    env_rend.video_path = "/home/pasquale/Desktop/thesis/thesis-code/2D_Acrobot/ddpg/Video"
     env_rend.LOGDATA=1   ####@@@@@@@@@@@@@@@@############@@@@@@@@@@@@@@@@@@@@#############@@@@@@@@
     rendertrial()
     env_rend.stopSim()
@@ -320,12 +345,15 @@ if __name__ == "__main__":
 
 
     ##   SAVE DATA  ##
-    filepath = '/home/pasquale/Desktop/thesis/thesis-code/1D_pendulum/ddpg/'
+    filepath = '/home/pasquale/Desktop/thesis/thesis-code/2D_Acrobot/ddpg/'
     
 
     f=open(filepath + 'hrwd{}.txt'.format(SIM_NUMBER), 'w')
     f.write(json.dumps(h_rwd))
     f.close()
+    
+    
+    
 
     f=open(filepath + 'config{}.txt'.format(SIM_NUMBER), 'w')
     f.write("NEPISODES = "+str(NEPISODES)+"\nNSTEPS = "+str(NSTEPS)+"\nQVALUE_LEARNING_RATE = "+str(QVALUE_LEARNING_RATE)+"\nPOLICY_LEARNING_RATE = "+str(POLICY_LEARNING_RATE)+"\nDECAY_RATE = "+str(DECAY_RATE)+"\nUPDATE_RATE = "+str(UPDATE_RATE)+"\nREPLAY_SIZE"+str(REPLAY_SIZE)+"\nBATCH_SIZE"+str(BATCH_SIZE)+"\nNH1 = "+str(NH1)+"\nNH2 = "+str(NH2) + "\nreward weights = "+str(0)
@@ -340,7 +368,7 @@ if __name__ == "__main__":
 #salvare a che step arriva in posizione verticale (anche con random reset)
 
 
-    os.system('spd-say "your program has finished you motherfucker, Erik go fuck yourself"')
+    os.system('spd-say "your program has finished"')
     
     plt.plot( np.cumsum(h_rwd)/list(range(1,NEPISODES)))
     plt.grid(True)
@@ -349,4 +377,6 @@ if __name__ == "__main__":
     
 
     tf_saver.save(sess, model_save)
+
+
 

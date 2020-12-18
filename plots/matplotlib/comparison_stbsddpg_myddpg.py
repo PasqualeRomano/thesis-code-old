@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 import csv ,pandas as pd
 
 
@@ -61,16 +62,35 @@ ax2.plot(vel_seq_stbsddpg,'r.')
 ax2.set_ylabel('angular velocity [rad/s]')
 ax2.set_xlabel('step')
 ax2.grid(color='k', linestyle='-', linewidth=.25)
-plt.savefig('/home/pasquale/Desktop/thesis/thesis-code/plots/plot_ddpg_stbs_1Dp.eps', format='eps')
+plt.savefig('/home/pasquale/Desktop/thesis/thesis-code/plots/plot_ddpg_stbs_1Dp.eps', format='eps',dpi =200)
 plt.show()
 
 
 f, (ax) = plt.subplots(1,1)
-ax.scatter(list(range(0,len(act_seq_myddpg))),act_seq_myddpg,marker = ".",color = 'darkgreen')
-
-ax.scatter(list(range(0,len(act_seq_myddpg))),act_seq_stbsddpg, marker= '.', color = 'darkorange')
-
+ax.scatter(list(range(0,len(act_seq_myddpg))),act_seq_myddpg,marker = ".",color = 'darkgreen', label='Implementation 1')
+ax.scatter(list(range(0,len(act_seq_myddpg))),act_seq_stbsddpg, marker= '.', color = 'darkorange', label='Implementation 2')
 ax.set_ylabel('torque [Nm]')
 ax.set_xlabel('step')
+#darkgreenpatch = mpatches.Patch(color='darkgreen')
+#darkorangpatch = mpatches.Patch(color='darkorange')
+
+plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc='lower left',ncol=2, mode="expand", borderaxespad=0.)
 ax.grid(color='k', linestyle='-', linewidth=.25)
+
+plt.savefig('/home/pasquale/Desktop/thesis/thesis-code/plots/plot_action_comparison_1Dp.eps', format='eps',dpi =200)
+plt.show()
+
+f, (ax) = plt.subplots(1,1)
+ax.scatter(ang_seq_myddpg,vel_seq_myddpg,color = 'darkgreen',marker = ".", label='Implementation 1')
+ax.scatter(ang_seq_stbsddpg,vel_seq_stbsddpg, color = 'darkorange',marker = ".", label='Implementation 2')
+ax.set_ylabel('angular velocity [rad/s]')
+ax.set_xlabel('angle [deg]')
+#darkgreenpatch = mpatches.Patch(color='darkgreen')
+#darkorangpatch = mpatches.Patch(color='darkorange')
+
+
+plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc='lower left',ncol=2, mode="expand", borderaxespad=0.)
+ax.grid(color='k', linestyle='-', linewidth=.25)
+
+#plt.savefig('/home/pasquale/Desktop/thesis/thesis-code/plots/plot_action_comparison_1Dp.eps', format='eps')
 plt.show()

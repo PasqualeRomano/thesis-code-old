@@ -1,3 +1,4 @@
+
 import gym
 import time
 import numpy as np,pandas as pd,statistics as st
@@ -8,11 +9,12 @@ from stable_baselines.common.noise import NormalActionNoise, OrnsteinUhlenbeckAc
 from stable_baselines.common.evaluation import evaluate_policy
 from stable_baselines import DDPG
 from custom_env_stable_baselines import PendulumPyB
+import matplotlib.pyplot as plt,matplotlib.ticker 
 import training_config as tc
 import os
 
 
-
+SAVE =0
 
 env = PendulumPyB()
 
@@ -31,7 +33,10 @@ NH1 = NH2               = tc.NH1                        # Hidden layer size
 range_esp               = tc.range_esp
 time_step               = tc.time_step
 
-model = DDPG.load("ddpg_pendulum_stb_baselines_1.8")
+
+SIM_NUMBER = 1.2
+
+model = DDPG.load("ddpg_pendulum_stb_baselines_"+str(SIM_NUMBER))
 
 robot = Robot("single_pendulum.urdf")
 robot.sim_number=1
@@ -177,15 +182,16 @@ print(" (RANDSET) mean return 100 last episodes: "+str(sum(h_mean_last_list)/len
 
 robot.stopSim()  
 #(RANDSET) mean return 20 last episodes: -0.0001268793446133105, first reached top at 21.05
+if SAVE:
 
-f=open(path_eval + 'results_baselines.txt', 'w')
-f.write("up position reached at step"+str(first_step_up_1)+",mean reward last steps after up reached: "+str(h_mean_last)+", angle is lower than "+str(max_after_up)+"in the last 50 steps"
+    f=open(path_eval + 'results_baselines.txt', 'w')
+    f.write("up position reached at step"+str(first_step_up_1)+",mean reward last steps after up reached: "+str(h_mean_last)+", angle is lower than "+str(max_after_up)+"in the last 50 steps"
         +"\n (RANDSET) mean 100 last episodes: up step "+str(mean_first_step_up_list)+"+-" +str(std_first_step_up_list)+",return afer "+str(mean_h_mean_last)+"+-" +str(std_mean_h_mean_last)+" ,max angle"+str(mean_max_after_up_list)+"+-" +str(std_max_after_up_list))
-#            
-f.close() 
+    #            
+    f.close() 
 
-action_sav = np.array(action_list).T[0].tolist()
-pd.DataFrame([angles_list,vel_ang_list,action_sav]).T.to_csv(path_eval + 'ang_vel_act_seq.csv')
+    action_sav = np.array(action_list).T[0].tolist()
+    pd.DataFrame([angles_list,vel_ang_list,action_sav]).T.to_csv(path_eval + 'ang_vel_act_seq.csv')
 
 #confronta 
 #convergenza
@@ -193,3 +199,61 @@ pd.DataFrame([angles_list,vel_ang_list,action_sav]).T.to_csv(path_eval + 'ang_ve
 #average reward
 #valuta policy con (10x)random reset 
 #salvare a che step arriva in posizione verticale (anche con random reset)
+
+torque_map = list(np.arange(0,6,0.01))
+
+ik = 0
+for i in list(np.arange(0,6,0.01)):
+    
+    row = []
+    for j in np.arange(-0.7*np.pi,0.7*np.pi,0.01*np.pi):
+        
+        
+        obs = np.array([np.sin(i*np.pi/180),np.cos(i*np.pi/180),j])
+        action, _states = model.predict(obs)
+        row+= action.tolist()
+        
+    torque_map[ik] = row
+    ik+=1
+    
+    
+
+Z = np.array(torque_map)  #np.random.rand(6, 10)
+x = np.arange(-0.7*np.pi,0.7*np.pi,0.01*np.pi)  
+y = np.arange(0,6,0.01)
+
+# fig, ax = plt.subplots()
+# ax.pcolormesh(x, y, Z)
+# plt.show()
+
+
+
+levels = matplotlib.ticker.MaxNLocator(nbins=15).tick_values(Z.min(), Z.max())
+
+
+# pick the desired colormap, sensible levels, and define a normalization
+# instance which takes data values and translates those into levels.
+cmap = plt.get_cmap('PiYG')
+norm = matplotlib.colors.BoundaryNorm(levels, ncolors=cmap.N, clip=True)
+
+fig, ax0 = plt.subplots()
+ax0.set_ylabel('angle [deg]')
+ax0.set_xlabel('angular velocity [rad/s]')
+im = ax0.pcolormesh(x, y, Z, cmap=cmap, norm=norm)
+fig.colorbar(im, ax=ax0,label = "Torque [Nm]")
+ax0.set_title('Agent Implementation 2')
+
+
+# contours are *point* based plots, so convert our bound into point
+# centers
+# cf = ax1.contourf(x,
+#                   y, Z, levels=levels,
+#                   cmap=cmap)
+# fig.colorbar(cf, ax=ax1)
+# ax1.set_title('contourf with levels')
+
+# adjust spacing between subplots so `ax1` title and `ax0` tick labels
+# don't overlap
+#fig.tight_layout()
+plt.savefig('/home/pasquale/Desktop/thesis/thesis-code/plots/plot_stbs_ddpg_policy_1Dp.eps', format='eps',dpi =200)
+plt.show()

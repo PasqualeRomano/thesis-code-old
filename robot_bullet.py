@@ -10,7 +10,7 @@ class Robot:
         self.urdf_path = urdf_path
         
         self.gravity = [0,0,-9.81]
-        self.time_step=time_step
+        self.time_step=time_step #
         
         
         self.LOGDATA=0
@@ -31,8 +31,8 @@ class Robot:
         self.states_sincos = []
         self.states_dot = []
         
-        self.actuated_index = []
-        self.observed_index = []
+        self.actuated_index = []   #list of joint to actuate (default all revolute), if needed it must to be set before calling setupSim()
+        self.observed_index = []   #list of link to observe (default all links), if needed it must to be set before calling setupSim()
         
         
         self.max_torque = 2.0
@@ -52,7 +52,7 @@ class Robot:
                 self.state_dot_seq = []
                 self.actions_seq = []
                 print("Starting video")
-                p.startStateLogging(p.STATE_LOGGING_VIDEO_MP4, self.video_path + "/Pendulum_training{}.mp4".format(self.sim_number),physicsClientId = self.client_id)               
+                p.startStateLogging(p.STATE_LOGGING_VIDEO_MP4, self.video_path + "/training{}.mp4".format(self.sim_number),physicsClientId = self.client_id)               
         else:
             self.client_id =self.physicsClient = p.connect(p.DIRECT)
             
@@ -92,8 +92,8 @@ class Robot:
         
             for i in range(len(self.observed_index)):
                
-                self.states.append(ss_tmp[i][0]+ p.getEulerFromQuaternion(ss_tmp[i][1]))  ##[  [pos,pos,pos,ang,ang,ang] , [pos,pos,pos,ang,ang,ang] , ... ,for each Link]
-             
+                self.states.append(ss_tmp[i][1]+ p.getEulerFromQuaternion(ss_tmp[i][2]))  ##[  [pos,pos,pos,ang,ang,ang] , [pos,pos,pos,ang,ang,ang] , ... ,for each Link]
+                                                                                            #for position and orientation it considers the INERTIAL reference frame (NOT JOINT)
                 if self.SINCOS==1:
                     self.states_sincos.append((np.sin(self.states[i][3]),np.cos(self.states[i][3]), # [    [sin,cos,sin,cos,sin,cos]   ,..., for each Link]
                                           np.sin(self.states[i][4]),np.cos(self.states[i][4]),
@@ -131,8 +131,8 @@ class Robot:
         self.body_id = p.loadURDF(self.load_file,self.init_pos,self.init_or,physicsClientId = self.client_id,flags = p.URDF_USE_INERTIA_FROM_FILE)
         
         self.getActuatedJoints()            
-        p.setJointMotorControlArray(self.body_id, self.actuated_index, p.VELOCITY_CONTROL, 
-                                    forces=[0.0 for m in self.actuated_index],physicsClientId = self.client_id)
+        p.setJointMotorControlArray(self.body_id, list(range(p.getNumJoints(self.body_id))), p.VELOCITY_CONTROL, 
+                                    forces=[0.0 for m in list(range(p.getNumJoints(self.body_id)))],physicsClientId = self.client_id)
         p.setJointMotorControlArray(self.body_id, self.actuated_index,p.TORQUE_CONTROL, forces=[0.0 for m in self.actuated_index],physicsClientId = self.client_id)
         
     
@@ -182,9 +182,9 @@ class Robot:
 
 if __name__ == "__main__":
 
-    pendulum = Robot("single_pendulum.urdf",time_step=0.01)
+    pendulum = Robot("double_pendulum.urdf",time_step=0.01)
+    pendulum.actuated_index=[2]
     
-   
     pendulum.setupSim()
     
     # for i in range (100):

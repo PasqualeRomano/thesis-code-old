@@ -1,0 +1,19 @@
+NEPISODES = 200
+NSTEPS = 300
+QVALUE_LEARNING_RATE = 0.001
+POLICY_LEARNING_RATE = 0.0001
+DECAY_RATE = 0.99
+UPDATE_RATE = 0.001
+REPLAY_SIZE10000
+BATCH_SIZE64
+NH1 = 400
+NH2 = 300
+reward weights = 0
+RANDOM RESET = 0
+step_expl = 0
+epi_expl = 0
+range_esp = 2.0
+Elapsed time = 830.9572207927704
+Mean reward (20 eps) = -43.46397
+Std reward = 3.8146973e-06
+Policy = <class 'custom_policy_stable_baselines.CustomPolicy_4'>

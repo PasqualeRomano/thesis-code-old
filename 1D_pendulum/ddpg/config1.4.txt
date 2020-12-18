@@ -13,6 +13,6 @@ RANDOM RESET = 0
 step_expl = 0
 epi_expl = 0
 range_esp = 2.0
-Elapsed time = 561.8394260406494
+Elapsed time = 556.0961806774139
 Mean reward (20 eps) = 0
 Std reward = 0
